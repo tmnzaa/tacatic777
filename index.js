@@ -128,7 +128,8 @@ sock.ev.on('group-participants.update', async (update) => {
     const metadata = await sock.groupMetadata(update.id)
 
     for (const jid of update.participants) {
-      const name = metadata.participants.find(p => p.id === jid)?.notify || `@${jid.split('@')[0]}`
+     const contact = await sock.onWhatsApp(jid)
+const name = contact?.[0]?.notify || `@${jid.split('@')[0]}`
       const groupName = metadata.subject
       const tagUser = `@${jid.split('@')[0]}`
       const imagePath = './ronaldo.jpg'
