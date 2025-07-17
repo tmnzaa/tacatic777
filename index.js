@@ -136,7 +136,7 @@ const name = contact?.[0]?.notify || `@${jid.split('@')[0]}`
 
       // 🟢 WELCOME
      if (update.action === 'add' && fitur.welcome) {
-  const teks = `👋 *${name}* (${tagUser}) baru saja bergabung ke *${groupName}*.📜 _"Aturan bukan buat membatasi, tapi buat menjaga kenyamanan bersama."_ Sebelum mulai interaksi atau promosi, silakan *baca rules di deskripsi grup*.📌 Di sini kita jaga suasana tetap rapi dan nyaman. Hormati aturan, hargai sesama.— Bot Taca standby. 🤖`
+  const teks = `👋 *${name}* (${tagUser}) baru saja bergabung ke *${groupName}*.\n\n📜 _"Aturan bukan buat membatasi, tapi buat menjaga kenyamanan bersama."_ \n\nSebelum mulai interaksi atau promosi, silakan *baca rules di deskripsi grup*.\n\n📌 Di sini kita jaga suasana tetap rapi dan nyaman. Hormati aturan, hargai sesama.\n\n— Bot Taca standby. 🤖`
 
   await sock.sendMessage(update.id, {
     image: fs.readFileSync(imagePath),
