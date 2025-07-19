@@ -14,23 +14,36 @@ const axios = require('axios')
 const dbFile = './grup.json'
 let dbCache = {}
 
+function isValidJson(content) {
+  try {
+    const parsed = JSON.parse(content)
+    return typeof parsed === 'object' && !Array.isArray(parsed)
+  } catch {
+    return false
+  }
+}
+
 if (!fs.existsSync(dbFile)) {
-  console.error('❌ File grup.json tidak ditemukan! Harap buat file kosong terlebih dahulu.')
-  process.exit(1)
+  console.warn('⚠️ File grup.json tidak ditemukan, membuat file kosong...')
+  fs.writeFileSync(dbFile, '{}', 'utf-8')
 }
 
 try {
   const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  dbCache = raw === '' ? {} : JSON.parse(raw)
+  dbCache = isValidJson(raw) ? JSON.parse(raw) : {}
 } catch (err) {
-  console.error('❌ File grup.json rusak atau tidak bisa dibaca!')
-  console.error('⛔ Harap perbaiki manual file tersebut.')
-  process.exit(1)
+  console.error('❌ File grup.json rusak! Reset ke kosong.')
+  fs.writeFileSync(dbFile, '{}', 'utf-8')
+  dbCache = {}
 }
 
 // Simpan DB ke file
 function saveDB() {
-  fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
+  try {
+    fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
+  } catch (err) {
+    console.error('❌ Gagal menyimpan DB:', err.message)
+  }
 }
 
 let qrShown = false
@@ -166,14 +179,13 @@ schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = now.toTimeString().slice(0, 5).replace(':', '.').padStart(5, '0')
   let db = {}
-  
-  try {
-    const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-    db = raw === '' ? {} : JSON.parse(raw)
-  } catch (e) {
-    console.error('❌ Gagal baca dbFile:', e)
-    return
-  }
+try {
+  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+  db = isValidJson(raw) ? JSON.parse(raw) : {}
+} catch (e) {
+  console.error('❌ Gagal baca atau parse grup.json:', e.message || e)
+  return
+}
 
   for (const id in db) {
     const fitur = db[id]
