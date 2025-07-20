@@ -65,14 +65,6 @@ function saveDB() {
 
 let qrShown = false
 
-// === Cache DB agar tidak delay ===
-try {
-  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  dbCache = raw === '' ? {} : JSON.parse(raw)
-} catch (e) {
-  dbCache = {}
-}
-
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState('./session')
 
