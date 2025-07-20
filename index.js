@@ -11,7 +11,6 @@ const fs = require('fs-extra')
 const axios = require('axios')
 
 // === File Database ===
-const dbFile = './grup.json'
 const dbFile = './grup.json';
 let dbCache = {};
 
@@ -56,10 +55,6 @@ function saveDB() {
   }
 }
 
-module.exports = {
-  dbCache,
-  saveDB
-};
 
 
 let qrShown = false
