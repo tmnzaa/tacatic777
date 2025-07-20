@@ -11,51 +11,48 @@ const fs = require('fs-extra')
 const axios = require('axios')
 
 // === File Database ===
-const dbFile = './grup.json';
-let dbCache = {};
+const dbFile = './grup.json'
+let dbCache = {}
 
-// Validasi apakah isi JSON valid
+// Validasi isi file JSON
 function isValidJson(content) {
   try {
-    const parsed = JSON.parse(content);
-    return typeof parsed === 'object' && !Array.isArray(parsed);
+    const parsed = JSON.parse(content)
+    return typeof parsed === 'object' && !Array.isArray(parsed)
   } catch {
-    return false;
+    return false
   }
 }
 
-// Jika file belum ada, buat file baru dengan {}
+// Cek apakah file grup.json ada
 if (!fs.existsSync(dbFile)) {
-  console.warn('⚠️ File grup.json tidak ditemukan, membuat file kosong...');
-  fs.writeFileSync(dbFile, '{}', 'utf-8');
-}
-
-// Coba baca isi file
-try {
-  const raw = fs.readFileSync(dbFile, 'utf-8').trim();
-  if (isValidJson(raw)) {
-    dbCache = JSON.parse(raw);
-  } else {
-    console.error('❌ grup.json rusak! Tidak ditimpa untuk menjaga data.');
+  console.warn('⚠️ File grup.json tidak ditemukan, membuat file baru...')
+  fs.writeFileSync(dbFile, '{}', 'utf-8')
+} else {
+  try {
+    const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+    if (isValidJson(raw)) {
+      dbCache = JSON.parse(raw)
+    } else {
+      console.error('❌ File grup.json rusak! Tidak diubah agar data tidak hilang.')
+    }
+  } catch (err) {
+    console.error('❌ Gagal membaca grup.json:', err.message)
   }
-} catch (err) {
-  console.error('❌ Gagal membaca grup.json:', err.message);
 }
 
-// Fungsi menyimpan DB ke file hanya jika dbCache valid dan tidak kosong
+// Fungsi simpan DB
 function saveDB() {
   try {
-    if (Object.keys(dbCache).length === 0) {
-      console.warn('⚠️ DB kosong, tidak disimpan agar tidak overwrite!');
-      return;
+    if (Object.keys(dbCache).length > 0) {
+      fs.writeFileSync(dbFile, JSON.stringify(dbCache, null, 2), 'utf-8')
+    } else {
+      console.warn('⚠️ dbCache kosong, simpan dibatalkan agar tidak kosongkan file.')
     }
-    fs.writeJsonSync(dbFile, dbCache, { spaces: 2 });
   } catch (err) {
-    console.error('❌ Gagal menyimpan DB:', err.message);
+    console.error('❌ Gagal menyimpan DB:', err.message)
   }
 }
-
-
 
 let qrShown = false
 
