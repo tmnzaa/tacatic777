@@ -12,6 +12,7 @@ const axios = require('axios')
 
 // === File Database ===
 const dbFile = './grup.json'
+const dbFile = './grup.json'
 let dbCache = {}
 
 // Validasi isi file JSON
@@ -24,35 +25,43 @@ function isValidJson(content) {
   }
 }
 
-// Cek apakah file grup.json ada
+// Buat file jika belum ada
 if (!fs.existsSync(dbFile)) {
   console.warn('⚠️ File grup.json tidak ditemukan, membuat file baru...')
-  fs.writeFileSync(dbFile, '{}', 'utf-8')
-} else {
   try {
-    const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-    if (isValidJson(raw)) {
-      dbCache = JSON.parse(raw)
-    } else {
-      console.error('❌ File grup.json rusak! Tidak diubah agar data tidak hilang.')
-    }
+    fs.writeFileSync(dbFile, '{}', 'utf-8')
   } catch (err) {
-    console.error('❌ Gagal membaca grup.json:', err.message)
+    console.error('❌ Gagal membuat grup.json:', err.message)
   }
+}
+
+// Baca isi file jika ada
+try {
+  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+  if (isValidJson(raw)) {
+    dbCache = JSON.parse(raw)
+  } else {
+    console.error('❌ File grup.json rusak! Isi tidak valid JSON.')
+    console.warn('📛 Tidak menyentuh file agar data tidak hilang.')
+  }
+} catch (err) {
+  console.error('❌ Gagal membaca grup.json:', err.message)
 }
 
 // Fungsi simpan DB
 function saveDB() {
   try {
-    if (Object.keys(dbCache).length > 0) {
+    // Cegah simpan kalau data rusak atau undefined
+    if (typeof dbCache === 'object' && dbCache !== null) {
       fs.writeFileSync(dbFile, JSON.stringify(dbCache, null, 2), 'utf-8')
     } else {
-      console.warn('⚠️ dbCache kosong, simpan dibatalkan agar tidak kosongkan file.')
+      console.warn('⚠️ dbCache tidak valid, simpan dibatalkan.')
     }
   } catch (err) {
-    console.error('❌ Gagal menyimpan DB:', err.message)
+    console.error('❌ Gagal menyimpan grup.json:', err.message)
   }
 }
+
 
 let qrShown = false
 
