@@ -10,8 +10,6 @@ const schedule = require('node-schedule')
 const fs = require('fs-extra')
 const axios = require('axios')
 
-// === File Database ===
-const dbFile = './grup.json'
 const dbFile = './grup.json'
 let dbCache = {}
 
@@ -35,30 +33,32 @@ if (!fs.existsSync(dbFile)) {
   }
 }
 
-// Baca isi file jika ada
+// Load isi file
 try {
   const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  if (isValidJson(raw)) {
+  if (raw === '') {
+    console.warn('⚠️ grup.json kosong, diisi default {}')
+    dbCache = {}
+    fs.writeFileSync(dbFile, '{}', 'utf-8')
+  } else if (isValidJson(raw)) {
     dbCache = JSON.parse(raw)
   } else {
-    console.error('❌ File grup.json rusak! Isi tidak valid JSON.')
-    console.warn('📛 Tidak menyentuh file agar data tidak hilang.')
+    console.error('❌ grup.json rusak. Tidak ditimpa demi keamanan data.')
   }
 } catch (err) {
   console.error('❌ Gagal membaca grup.json:', err.message)
 }
 
-// Fungsi simpan DB
+// Simpan DB ke file
 function saveDB() {
   try {
-    // Cegah simpan kalau data rusak atau undefined
     if (typeof dbCache === 'object' && dbCache !== null) {
       fs.writeFileSync(dbFile, JSON.stringify(dbCache, null, 2), 'utf-8')
     } else {
       console.warn('⚠️ dbCache tidak valid, simpan dibatalkan.')
     }
   } catch (err) {
-    console.error('❌ Gagal menyimpan grup.json:', err.message)
+    console.error('❌ Gagal menyimpan DB:', err.message)
   }
 }
 
@@ -195,17 +195,9 @@ const name = contact?.[0]?.notify || `@${jid.split('@')[0]}`
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = now.toTimeString().slice(0, 5).replace(':', '.').padStart(5, '0')
-  let db = {}
-try {
-  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  db = isValidJson(raw) ? JSON.parse(raw) : {}
-} catch (e) {
-  console.error('❌ Gagal baca atau parse grup.json:', e.message || e)
-  return
-}
 
-  for (const id in db) {
-    const fitur = db[id]
+  for (const id in dbCache) {
+    const fitur = dbCache[id]
     if (!fitur) continue
 
     try {
@@ -224,45 +216,39 @@ try {
         continue
       }
 
-      // ✅ Buka grup
-if (fitur.openTime && fitur.openTime === jam) {
-  await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
-    console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
-  })
-  await sock.sendMessage(id, {
-    text: `✅ Grup dibuka otomatis jam *${jam}*`
-  }).catch(() => { })
+      if (fitur.openTime && fitur.openTime === jam) {
+        await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
+          console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
+        })
+        await sock.sendMessage(id, {
+          text: `✅ Grup dibuka otomatis jam *${jam}*`
+        }).catch(() => { })
 
-  console.log(`✅ Grup ${id} dibuka jam ${jam}`)
-  delete fitur.openTime // ⬅️ Tambahkan ini
-}
+        console.log(`✅ Grup ${id} dibuka jam ${jam}`)
+        delete fitur.openTime
+      }
 
-// 🔒 Tutup grup
-if (fitur.closeTime && fitur.closeTime === jam) {
-  await sock.groupSettingUpdate(id, 'announcement').catch(e => {
-    console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
-  })
-  await sock.sendMessage(id, {
-    text: `🔒 Grup ditutup otomatis jam *${jam}*`
-  }).catch(() => { })
+      if (fitur.closeTime && fitur.closeTime === jam) {
+        await sock.groupSettingUpdate(id, 'announcement').catch(e => {
+          console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
+        })
+        await sock.sendMessage(id, {
+          text: `🔒 Grup ditutup otomatis jam *${jam}*`
+        }).catch(() => { })
 
-  console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
-  delete fitur.closeTime // ⬅️ Tambahkan ini
-}
+        console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
+        delete fitur.closeTime
+      }
 
     } catch (err) {
       console.error(`❌ Gagal update setting grup ${id}:`, err.message || err)
-      // Jangan kirim ke grup, cukup log ke konsol  
     }
   }
 
   // Simpan perubahan DB
-  try {
-  await fs.writeJson(dbFile, db, { spaces: 2 })
-} catch (e) {
-  console.error('❌ Gagal simpan file DB:', e.message || e)
-}
+  saveDB()
 })
+
 }
 
 // 🛠 Global error
