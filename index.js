@@ -23,18 +23,25 @@ function isValidJson(content) {
   }
 }
 
+// Buat file kosong kalau belum ada
 if (!fs.existsSync(dbFile)) {
   console.warn('⚠️ File grup.json tidak ditemukan, membuat file kosong...')
   fs.writeFileSync(dbFile, '{}', 'utf-8')
 }
 
+// Baca file JSON
 try {
   const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  dbCache = isValidJson(raw) ? JSON.parse(raw) : {}
+  if (isValidJson(raw)) {
+    dbCache = JSON.parse(raw)
+  } else {
+    throw new Error('Format JSON tidak valid')
+  }
 } catch (err) {
-  console.error('❌ File grup.json rusak! Reset ke kosong.')
-  fs.writeFileSync(dbFile, '{}', 'utf-8')
-  dbCache = {}
+  console.error('❌ Gagal membaca file grup.json:', err.message)
+  console.warn('⛔ File TIDAK di-reset. Periksa file secara manual agar data tidak hilang!')
+  // Tidak reset file
+  dbCache = {} // tetap kosong di memori, tapi file tidak ditimpa
 }
 
 // Simpan DB ke file
