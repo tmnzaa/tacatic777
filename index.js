@@ -186,6 +186,13 @@ function padTime(number) {
   return number.toString().padStart(2, '0')
 }
 
+const schedule = require('node-schedule')
+
+// Pastikan fungsi ini ditaruh sebelum digunakan
+function padTime(number) {
+  return number.toString().padStart(2, '0')
+}
+
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = `${padTime(now.getHours())}.${padTime(now.getMinutes())}`
@@ -249,8 +256,6 @@ schedule.scheduleJob('* * * * *', async () => {
 
   saveDB()
 })
-
-
 
 }
 
