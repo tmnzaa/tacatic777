@@ -181,13 +181,6 @@ sock.ev.on('group-participants.update', async (update) => {
   }
 })
 
-// Utility fungsi buat pastikan format HH.mm
-function padTime(number) {
-  return number.toString().padStart(2, '0')
-}
-
-const schedule = require('node-schedule')
-
 // Pastikan fungsi ini ditaruh sebelum digunakan
 function padTime(number) {
   return number.toString().padStart(2, '0')
