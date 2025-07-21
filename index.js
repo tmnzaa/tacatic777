@@ -181,9 +181,15 @@ sock.ev.on('group-participants.update', async (update) => {
   }
 })
 
+// Utility fungsi buat pastikan format HH.mm
+function padTime(number) {
+  return number.toString().padStart(2, '0')
+}
+
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = `${padTime(now.getHours())}.${padTime(now.getMinutes())}`
+  console.log('⏰ Cek waktu sekarang:', jam)
 
   for (const id in dbCache) {
     const fitur = dbCache[id]
@@ -205,32 +211,31 @@ schedule.scheduleJob('* * * * *', async () => {
         continue
       }
 
-      // Pastikan openTime dan closeTime dipaksa jadi string jam format 'HH.mm'
-      if (fitur.openTime) fitur.openTime = fitur.openTime.padStart(5, '0')
-      if (fitur.closeTime) fitur.closeTime = fitur.closeTime.padStart(5, '0')
+      const openTime = fitur.openTime?.padStart(5, '0')
+      const closeTime = fitur.closeTime?.padStart(5, '0')
 
-      // Proses Open Group
-      if (fitur.openTime === jam) {
+      // Proses OPEN
+      if (openTime === jam) {
         try {
           await sock.groupSettingUpdate(id, 'not_announcement')
           await sock.sendMessage(id, {
-            text: `✅ Grup dibuka otomatis jam *${fitur.openTime}*`
+            text: `✅ Grup dibuka otomatis jam *${openTime}*`
           })
-          console.log(`✅ Grup ${id} dibuka jam ${fitur.openTime}`)
+          console.log(`✅ Grup ${id} dibuka jam ${openTime}`)
         } catch (e) {
           console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
         }
         delete fitur.openTime // Hapus setelah diproses
       }
 
-      // Proses Close Group
-      if (fitur.closeTime === jam) {
+      // Proses CLOSE
+      if (closeTime === jam) {
         try {
           await sock.groupSettingUpdate(id, 'announcement')
           await sock.sendMessage(id, {
-            text: `🔒 Grup ditutup otomatis jam *${fitur.closeTime}*`
+            text: `🔒 Grup ditutup otomatis jam *${closeTime}*`
           })
-          console.log(`🔒 Grup ${id} ditutup jam ${fitur.closeTime}`)
+          console.log(`🔒 Grup ${id} ditutup jam ${closeTime}`)
         } catch (e) {
           console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
         }
@@ -244,6 +249,7 @@ schedule.scheduleJob('* * * * *', async () => {
 
   saveDB()
 })
+
 
 
 }
