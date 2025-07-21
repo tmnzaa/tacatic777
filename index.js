@@ -10,10 +10,10 @@ const schedule = require('node-schedule')
 const fs = require('fs-extra')
 const axios = require('axios')
 
+// === File Database ===
 const dbFile = './grup.json'
 let dbCache = {}
 
-// Validasi isi file JSON
 function isValidJson(content) {
   try {
     const parsed = JSON.parse(content)
@@ -23,47 +23,38 @@ function isValidJson(content) {
   }
 }
 
-// Buat file jika belum ada
 if (!fs.existsSync(dbFile)) {
-  console.warn('⚠️ File grup.json tidak ditemukan, membuat file baru...')
-  try {
-    fs.writeFileSync(dbFile, '{}', 'utf-8')
-  } catch (err) {
-    console.error('❌ Gagal membuat grup.json:', err.message)
-  }
+  console.warn('⚠️ File grup.json tidak ditemukan, membuat file kosong...')
+  fs.writeFileSync(dbFile, '{}', 'utf-8')
 }
 
-// Load isi file
 try {
   const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  if (raw === '') {
-    console.warn('⚠️ grup.json kosong, diisi default {}')
-    dbCache = {}
-    fs.writeFileSync(dbFile, '{}', 'utf-8')
-  } else if (isValidJson(raw)) {
-    dbCache = JSON.parse(raw)
-  } else {
-    console.error('❌ grup.json rusak. Tidak ditimpa demi keamanan data.')
-  }
+  dbCache = isValidJson(raw) ? JSON.parse(raw) : {}
 } catch (err) {
-  console.error('❌ Gagal membaca grup.json:', err.message)
+  console.error('❌ File grup.json rusak! Reset ke kosong.')
+  fs.writeFileSync(dbFile, '{}', 'utf-8')
+  dbCache = {}
 }
 
 // Simpan DB ke file
 function saveDB() {
   try {
-    if (typeof dbCache === 'object' && dbCache !== null) {
-      fs.writeFileSync(dbFile, JSON.stringify(dbCache, null, 2), 'utf-8')
-    } else {
-      console.warn('⚠️ dbCache tidak valid, simpan dibatalkan.')
-    }
+    fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
   } catch (err) {
     console.error('❌ Gagal menyimpan DB:', err.message)
   }
 }
 
-
 let qrShown = false
+
+// === Cache DB agar tidak delay ===
+try {
+  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+  dbCache = raw === '' ? {} : JSON.parse(raw)
+} catch (e) {
+  dbCache = {}
+}
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState('./session')
@@ -143,41 +134,47 @@ let db = dbCache
 })
 
 sock.ev.on('group-participants.update', async (update) => {
-  const fitur = dbCache[update.id]
-  if (!fitur) return
-
   try {
+    const fitur = dbCache[update.id]
+    if (!fitur || (!fitur.welcome && !fitur.leave)) return
+
     const metadata = await sock.groupMetadata(update.id)
+    const groupName = metadata.subject
+    const imagePath = './ronaldo.jpg'
 
     for (const jid of update.participants) {
-     const contact = await sock.onWhatsApp(jid)
-const name = contact?.[0]?.notify || `@${jid.split('@')[0]}`
-      const groupName = metadata.subject
+      // Cari nama user, fallback ke tag
+      let name = `@${jid.split('@')[0]}`
+      try {
+        const contact = await sock.onWhatsApp(jid)
+        name = contact?.[0]?.notify || name
+      } catch {}
+
       const tagUser = `@${jid.split('@')[0]}`
-      const imagePath = './ronaldo.jpg'
+      const mentions = [jid]
 
       // 🟢 WELCOME
-     if (update.action === 'add' && fitur.welcome) {
-  const teks = `👋 *${name}* (${tagUser}) baru saja bergabung ke *${groupName}*.\n\n📜 _"Aturan bukan buat membatasi, tapi buat menjaga kenyamanan bersama."_ \n\nSebelum mulai interaksi atau promosi, silakan *baca rules di deskripsi grup*.\n\n📌 Di sini kita jaga suasana tetap rapi dan nyaman. Hormati aturan, hargai sesama.\n\n— Bot Taca standby. 🤖`
+      if (update.action === 'add' && fitur.welcome) {
+        const teks = `👋 *${name}* (${tagUser}) baru saja bergabung ke *${groupName}*.\n\n📜 _"Aturan bukan buat membatasi, tapi buat menjaga kenyamanan bersama."_ \n\nSebelum mulai interaksi atau promosi, silakan *baca rules di deskripsi grup*.\n\n📌 Di sini kita jaga suasana tetap rapi dan nyaman. Hormati aturan, hargai sesama.\n\n— Bot Taca standby. 🤖`
 
-  await sock.sendMessage(update.id, {
-    image: fs.readFileSync(imagePath),
-    caption: teks,
-    mentions: [jid]
-  })
-}
-
+        await sock.sendMessage(update.id, {
+          image: fs.readFileSync(imagePath),
+          caption: teks,
+          mentions
+        })
+      }
 
       // 🔴 LEAVE
       if (update.action === 'remove' && fitur.leave) {
-  const teks = `👋 *${name}* telah meninggalkan grup.\n\n_"Tidak semua perjalanan harus diselesaikan bersama. Terima kasih sudah pernah menjadi bagian dari *${groupName}*."_`
+        const teks = `👋 *${name}* telah meninggalkan grup.\n\n_"Tidak semua perjalanan harus diselesaikan bersama. Terima kasih sudah pernah menjadi bagian dari *${groupName}*."_
 
-  await sock.sendMessage(update.id, {
-    image: fs.readFileSync(imagePath),
-    caption: teks,
-    mentions: [jid]
-  })
-}
+— Bot Taca`
+        await sock.sendMessage(update.id, {
+          image: fs.readFileSync(imagePath),
+          caption: teks,
+          mentions
+        })
+      }
     }
   } catch (err) {
     console.error('❌ Error welcome/leave:', err)
@@ -208,28 +205,32 @@ schedule.scheduleJob('* * * * *', async () => {
         continue
       }
 
+      // Proses Open Group
       if (fitur.openTime && fitur.openTime === jam) {
-        await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
+        try {
+          await sock.groupSettingUpdate(id, 'not_announcement')
+          await sock.sendMessage(id, {
+            text: `✅ Grup dibuka otomatis jam *${jam}*`
+          })
+          console.log(`✅ Grup ${id} dibuka jam ${jam}`)
+        } catch (e) {
           console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
-        })
-        await sock.sendMessage(id, {
-          text: `✅ Grup dibuka otomatis jam *${jam}*`
-        }).catch(() => { })
-
-        console.log(`✅ Grup ${id} dibuka jam ${jam}`)
-        delete fitur.openTime
+        }
+        delete fitur.openTime // Hapus setelah diproses
       }
 
+      // Proses Close Group
       if (fitur.closeTime && fitur.closeTime === jam) {
-        await sock.groupSettingUpdate(id, 'announcement').catch(e => {
+        try {
+          await sock.groupSettingUpdate(id, 'announcement')
+          await sock.sendMessage(id, {
+            text: `🔒 Grup ditutup otomatis jam *${jam}*`
+          })
+          console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
+        } catch (e) {
           console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
-        })
-        await sock.sendMessage(id, {
-          text: `🔒 Grup ditutup otomatis jam *${jam}*`
-        }).catch(() => { })
-
-        console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
-        delete fitur.closeTime
+        }
+        delete fitur.closeTime // Hapus setelah diproses
       }
 
     } catch (err) {
@@ -237,9 +238,9 @@ schedule.scheduleJob('* * * * *', async () => {
     }
   }
 
-  // Simpan perubahan DB
-  saveDB()
+  saveDB() // Simpan setiap menit setelah perubahan
 })
+
 
 }
 
