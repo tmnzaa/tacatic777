@@ -183,7 +183,7 @@ sock.ev.on('group-participants.update', async (update) => {
 
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
-  const jam = now.toTimeString().slice(0, 5).replace(':', '.').padStart(5, '0')
+  const jam = `${padTime(now.getHours())}.${padTime(now.getMinutes())}`
 
   for (const id in dbCache) {
     const fitur = dbCache[id]
@@ -205,41 +205,44 @@ schedule.scheduleJob('* * * * *', async () => {
         continue
       }
 
+      // Pastikan openTime dan closeTime dipaksa jadi string jam format 'HH.mm'
+      if (fitur.openTime) fitur.openTime = fitur.openTime.padStart(5, '0')
+      if (fitur.closeTime) fitur.closeTime = fitur.closeTime.padStart(5, '0')
+
       // Proses Open Group
-if (fitur.openTime && fitur.openTime <= jam) {
-  try {
-    await sock.groupSettingUpdate(id, 'not_announcement')
-    await sock.sendMessage(id, {
-      text: `✅ Grup dibuka otomatis jam *${fitur.openTime}*`
-    })
-    console.log(`✅ Grup ${id} dibuka jam ${fitur.openTime}`)
-  } catch (e) {
-    console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
-  }
-  delete fitur.openTime // Hapus setelah diproses
-}
+      if (fitur.openTime === jam) {
+        try {
+          await sock.groupSettingUpdate(id, 'not_announcement')
+          await sock.sendMessage(id, {
+            text: `✅ Grup dibuka otomatis jam *${fitur.openTime}*`
+          })
+          console.log(`✅ Grup ${id} dibuka jam ${fitur.openTime}`)
+        } catch (e) {
+          console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
+        }
+        delete fitur.openTime // Hapus setelah diproses
+      }
 
-// Proses Close Group
-if (fitur.closeTime && fitur.closeTime <= jam) {
-  try {
-    await sock.groupSettingUpdate(id, 'announcement')
-    await sock.sendMessage(id, {
-      text: `🔒 Grup ditutup otomatis jam *${fitur.closeTime}*`
-    })
-    console.log(`🔒 Grup ${id} ditutup jam ${fitur.closeTime}`)
-  } catch (e) {
-    console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
-  }
-  delete fitur.closeTime // Hapus setelah diproses
-}
-
+      // Proses Close Group
+      if (fitur.closeTime === jam) {
+        try {
+          await sock.groupSettingUpdate(id, 'announcement')
+          await sock.sendMessage(id, {
+            text: `🔒 Grup ditutup otomatis jam *${fitur.closeTime}*`
+          })
+          console.log(`🔒 Grup ${id} ditutup jam ${fitur.closeTime}`)
+        } catch (e) {
+          console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
+        }
+        delete fitur.closeTime // Hapus setelah diproses
+      }
 
     } catch (err) {
       console.error(`❌ Gagal update setting grup ${id}:`, err.message || err)
     }
   }
 
-  saveDB() // Simpan setiap menit setelah perubahan
+  saveDB()
 })
 
 
