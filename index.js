@@ -206,32 +206,33 @@ schedule.scheduleJob('* * * * *', async () => {
       }
 
       // Proses Open Group
-      if (fitur.openTime && fitur.openTime === jam) {
-        try {
-          await sock.groupSettingUpdate(id, 'not_announcement')
-          await sock.sendMessage(id, {
-            text: `✅ Grup dibuka otomatis jam *${jam}*`
-          })
-          console.log(`✅ Grup ${id} dibuka jam ${jam}`)
-        } catch (e) {
-          console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
-        }
-        delete fitur.openTime // Hapus setelah diproses
-      }
+if (fitur.openTime && fitur.openTime <= jam) {
+  try {
+    await sock.groupSettingUpdate(id, 'not_announcement')
+    await sock.sendMessage(id, {
+      text: `✅ Grup dibuka otomatis jam *${fitur.openTime}*`
+    })
+    console.log(`✅ Grup ${id} dibuka jam ${fitur.openTime}`)
+  } catch (e) {
+    console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
+  }
+  delete fitur.openTime // Hapus setelah diproses
+}
 
-      // Proses Close Group
-      if (fitur.closeTime && fitur.closeTime === jam) {
-        try {
-          await sock.groupSettingUpdate(id, 'announcement')
-          await sock.sendMessage(id, {
-            text: `🔒 Grup ditutup otomatis jam *${jam}*`
-          })
-          console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
-        } catch (e) {
-          console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
-        }
-        delete fitur.closeTime // Hapus setelah diproses
-      }
+// Proses Close Group
+if (fitur.closeTime && fitur.closeTime <= jam) {
+  try {
+    await sock.groupSettingUpdate(id, 'announcement')
+    await sock.sendMessage(id, {
+      text: `🔒 Grup ditutup otomatis jam *${fitur.closeTime}*`
+    })
+    console.log(`🔒 Grup ${id} ditutup jam ${fitur.closeTime}`)
+  } catch (e) {
+    console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
+  }
+  delete fitur.closeTime // Hapus setelah diproses
+}
+
 
     } catch (err) {
       console.error(`❌ Gagal update setting grup ${id}:`, err.message || err)
