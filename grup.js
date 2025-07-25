@@ -138,7 +138,8 @@ global.strikeCache = strikeDB; // update cache biar tetap sinkron
   return;
 }
 
-const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
+const botParticipant = metadata.participants.find(p => p.id === botNumber);
+const isBotAdmin = botParticipant && ['admin', 'superadmin'].includes(botParticipant.admin);
 
 if (mentions.includes(botNumber) && !isCommand) return;
 
@@ -171,7 +172,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   if (text === '.aktifbotper') {
     if (!isOwner) {
       return sock.sendMessage(from, {
-        text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
+        text: '❌ Hanya *Owner Bot* yang bisa aktifkan!'
        }, { quoted: msg });
     }
     fitur.permanen = true;
@@ -194,7 +195,7 @@ const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.
   // ⛔ Blokir semua fitur jika bot sudah aktif tapi belum jadi admin
 if (isBotAktif && !isBotAdmin) {
   return sock.sendMessage(from, {
-    text: '🚫 *Bot sudah aktif* di grup ini,\ntapi belum dijadikan *Admin Grup*.\n\nMohon jadikan aku admin dulu agar bisa menjalankan fitur-fitur keamanan dan otomatis!'
+    text: '🚫 *Bot sudah aktif* di grup ini,\ntapi belum dijadikan *Admin Grup*.\n\nMohon jadikan aku admin dulu agar bisa menjalankan fitur!'
   }, { quoted: msg });
 }
 
@@ -603,45 +604,64 @@ for (let f of fiturList) {
 
 const OWNER_NUM = OWNER_BOT[0]; // atau broadcast ke semua OWNER_BOT kalau mau
 
-// 👑 Promote
-if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+if (text.startsWith('.promote')) {
+  let target = [];
+
+  // Deteksi reply
+  if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
+    target = [msg.message.extendedTextMessage.contextInfo.participant];
+  }
+
+  // Jika mention
+  if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
+    target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+  }
+
+  if (target.length === 0) return sock.sendMessage(from, { text: "Tag atau reply orang yang mau di-promote!" });
+
   await sock.groupParticipantsUpdate(from, target, 'promote');
 
-  // Ambil info grup & pelaku
   const groupMetadata = await sock.groupMetadata(from);
   const groupName = groupMetadata.subject;
-  const pelaku = sender; // pengirim pesan
+  const pelaku = sender;
 
-  // Kirim ke grup
   await sock.sendMessage(from, {
     text: `🎉 *Promosi Berhasil!*\nSelamat kepada:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nKamu sekarang adalah *Admin Grup*! 🎖️`,
     mentions: target
   });
 
-  // Kirim laporan ke owner
   await sock.sendMessage(OWNER_NUM, {
     text: `🔔 *LAPORAN PROMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
     mentions: [pelaku, ...target],
   });
 }
 
-// 🧹 Demote
-if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+if (text.startsWith('.demote')) {
+  let target = [];
+
+  // Deteksi reply
+  if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
+    target = [msg.message.extendedTextMessage.contextInfo.participant];
+  }
+
+  // Jika mention
+  if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
+    target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+  }
+
+  if (target.length === 0) return sock.sendMessage(from, { text: "Tag atau reply orang yang mau di-demote!" });
+
   await sock.groupParticipantsUpdate(from, target, 'demote');
 
   const groupMetadata = await sock.groupMetadata(from);
   const groupName = groupMetadata.subject;
   const pelaku = sender;
 
-  // Kirim ke grup
   await sock.sendMessage(from, {
     text: `⚠️ *Turunkan Jabatan!*\nYang tadinya admin sekarang jadi rakyat biasa:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nJangan sedih ya, tetap semangat! 😅`,
     mentions: target
   });
 
-  // Kirim laporan ke owner
   await sock.sendMessage(OWNER_NUM, {
     text: `📢 *LAPORAN DEMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
     mentions: [pelaku, ...target],
