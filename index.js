@@ -185,81 +185,66 @@
     }
   })
 
-  // Pastikan fungsi ini ditaruh sebelum digunakan
-  function padTime(number) {
-    return number.toString().padStart(2, '0')
-  }
+// Padding waktu jadi dua digit
+function padTime(num) {
+  return num.toString().padStart(2, '0')
+}
 
-  const schedule = require('node-schedule')
+// Cek tiap menit
+schedule.scheduleJob('* * * * *', async () => {
+  const now = new Date()
+  const jam = `${padTime(now.getHours())}.${padTime(now.getMinutes())}`
+  console.log('⏰ Cek waktu sekarang:', jam)
 
-  function padTime(num) {
-    return num.toString().padStart(2, '0')
-  }
+  for (const id in dbCache) {
+    const fitur = dbCache[id]
+    if (!fitur) continue
 
-  schedule.scheduleJob('* * * * *', async () => {
-    const now = new Date()
-    const jam = `${padTime(now.getHours())}.${padTime(now.getMinutes())}`
-    console.log('⏰ Cek waktu sekarang:', jam)
+    const openTime = fitur.openTime?.padStart(5, '0')
+    const closeTime = fitur.closeTime?.padStart(5, '0')
 
-    for (const id in dbCache) {
-      const fitur = dbCache[id]
-      if (!fitur) continue
+    console.log(`🔍 Grup: ${id}, Open: ${openTime}, Close: ${closeTime}`)
 
-      try {
-        const metadata = await sock.groupMetadata(id).catch(e => {
-          console.warn(`⚠️ Gagal ambil metadata grup ${id}: ${e.message || e}`)
-          return null
-        })
-        if (!metadata) continue
-
-        const botNumber = sock.user?.id?.split(':')[0] + '@s.whatsapp.net'
-        const botParticipant = metadata.participants.find(p => p.id === botNumber)
-
-        if (!botParticipant || !(botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin')) {
-          console.log(`❌ Bot bukan admin di grup ${id}, skip.`)
-          continue
-        }
-
-        const openTime = fitur.openTime?.padStart(5, '0') // Misal "07.00"
-        const closeTime = fitur.closeTime?.padStart(5, '0')
-
-        // Tambahkan di awal loop:
-  if (fitur.lastProcessed === jam) continue
-
-  // 🔓 Buka Grup
-  if (openTime === jam) {
     try {
-      await sock.groupSettingUpdate(id, 'not_announcement')
-      await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${openTime}*` })
-      console.log(`✅ Grup ${id} dibuka jam ${openTime}`)
-      delete fitur.openTime
-      fitur.lastProcessed = jam
-    } catch (e) {
-      console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
-    }
-  }
+      const metadata = await sock.groupMetadata(id).catch(e => {
+        console.warn(`⚠️ Gagal ambil metadata grup ${id}: ${e.message || e}`)
+        return null
+      })
+      if (!metadata) continue
 
-  // 🔒 Tutup Grup
-  if (closeTime === jam) {
-    try {
-      await sock.groupSettingUpdate(id, 'announcement')
-      await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${closeTime}*` })
-      console.log(`🔒 Grup ${id} ditutup jam ${closeTime}`)
-      delete fitur.closeTime
-      fitur.lastProcessed = jam
-    } catch (e) {
-      console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
-    }
-  }
+      const botNumber = sock.user?.id?.split(':')[0] + '@s.whatsapp.net'
+      const botParticipant = metadata.participants.find(p => p.id === botNumber)
 
-      } catch (err) {
-        console.error(`❌ Gagal proses grup ${id}:`, err.message || err)
+      if (!botParticipant || !(botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin')) {
+        console.log(`❌ Bot bukan admin di grup ${id}, skip.`)
+        continue
       }
+
+      // Jalankan openTime jika sesuai jam dan belum diproses
+      if (openTime === jam && fitur.lastOpenProcessed !== jam) {
+        await sock.groupSettingUpdate(id, 'not_announcement')
+        await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${openTime}*` })
+        console.log(`✅ Grup ${id} dibuka jam ${openTime}`)
+        fitur.lastOpenProcessed = jam
+        delete fitur.openTime
+        saveDB()
+      }
+
+      // Jalankan closeTime jika sesuai jam dan belum diproses
+      if (closeTime === jam && fitur.lastCloseProcessed !== jam) {
+        await sock.groupSettingUpdate(id, 'announcement')
+        await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${closeTime}*` })
+        console.log(`🔒 Grup ${id} ditutup jam ${closeTime}`)
+        fitur.lastCloseProcessed = jam
+        delete fitur.closeTime
+        saveDB()
+      }
+
+    } catch (err) {
+      console.error(`❌ Gagal proses grup ${id}:`, err.message || err)
     }
-
-    saveDB()
-  })
-
+  }
+})
 
   }
 
