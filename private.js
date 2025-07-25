@@ -18,63 +18,63 @@ if (!db[from].perkenalan) {
   db[from].perkenalan = true
   fs.writeJsonSync(path, db, { spaces: 2 })
   return sock.sendMessage(from, {
-    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_ – Liat semua kekuatan botku!\n• 💸 _.sewa_ – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌\n• 🤖 _.maujadibot_ – Ingin jadi bot juga?`
+    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_ – Liat semua kekuatan botku!\n• 💸 _.sewa_ – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌`
   })
 }
 
   // 📋 Menu utama lucu
   if (text.toLowerCase() === '.menu') {
     return sock.sendMessage(from, {
-      text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_  – Liat semua kekuatan botku!\n• 💸 _.sewa_   – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌\n• 🤖 _.maujadibot_ – Ingin jadi bot juga?`
+      text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_  – Liat semua kekuatan botku!\n• 💸 _.sewa_   – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌`
     })
   }
 
-  // 💎 Info Jadi Bot Sendiri (Versi Premium dengan Harga Baru)
-if (text.toLowerCase() === '.maujadibot') {
-  return sock.sendMessage(from, {
-    text: `💎 *MAU JADI BOT SENDIRI?*
+//   // 💎 Info Jadi Bot Sendiri (Versi Premium dengan Harga Baru)
+// if (text.toLowerCase() === '.maujadibot') {
+//   return sock.sendMessage(from, {
+//     text: `💎 *MAU JADI BOT SENDIRI?*
 
-Kamu bisa punya *Bot WhatsApp Profesional* seperti *Tacatic 04*, dengan fitur lengkap dan tampil keren! Cocok buat jagain grup pribadi, komunitas, bahkan bisa kamu sewakan lagi untuk cuan! 💸
+// Kamu bisa punya *Bot WhatsApp Profesional* seperti *Tacatic 04*, dengan fitur lengkap dan tampil keren! Cocok buat jagain grup pribadi, komunitas, bahkan bisa kamu sewakan lagi untuk cuan! 💸
 
-🚀 *FITUR YANG AKAN KAMU DAPATKAN:*
-• Auto jaga grup 24 jam (anti spam, antilink, welcome, dll)
-• Full Source Code premium (bukan hasil comot YouTube)
-• Custom nama bot dan watermark pribadi
-• Panduan lengkap setup langsung di HP (via Termux)
-• Bisa di-clone & aktifkan sendiri
-• Gratis bantuan pemasangan sampai bot nyala!
+// 🚀 *FITUR YANG AKAN KAMU DAPATKAN:*
+// • Auto jaga grup 24 jam (anti spam, antilink, welcome, dll)
+// • Full Source Code premium (bukan hasil comot YouTube)
+// • Custom nama bot dan watermark pribadi
+// • Panduan lengkap setup langsung di HP (via Termux)
+// • Bisa di-clone & aktifkan sendiri
+// • Gratis bantuan pemasangan sampai bot nyala!
 
-⚠️ *SYARAT JADI BOT SENDIRI:*
-• WAJIB punya **2 nomor WhatsApp**:
-  1. Nomor untuk login bot
-  2. Nomor owner untuk kontrol perintah
-(Bot tidak disarankan dijalankan dengan hanya 1 nomor.)
+// ⚠️ *SYARAT JADI BOT SENDIRI:*
+// • WAJIB punya **2 nomor WhatsApp**:
+//   1. Nomor untuk login bot
+//   2. Nomor owner untuk kontrol perintah
+// (Bot tidak disarankan dijalankan dengan hanya 1 nomor.)
 
-📱 *PERANGKAT WAJIB:*  
-Script ini *hanya bisa dijalankan lewat aplikasi Termux* di Android.
+// 📱 *PERANGKAT WAJIB:*  
+// Script ini *hanya bisa dijalankan lewat aplikasi Termux* di Android.
 
----
+// ---
 
-❗ *KENAPA SCRIPT INI BERBAYAR DAN MAHAL?*
-• Dibuat manual dari nol, bukan copas YouTube
-• Kode bersih, sudah diuji langsung di banyak grup aktif
-• Support dan update diberikan langsung oleh pembuat
-• Fitur stabil dan bisa kamu kembangkan sendiri
-Jadi, kamu nggak beli “kode asal comot”, tapi beli sistem profesional 🤝
+// ❗ *KENAPA SCRIPT INI BERBAYAR DAN MAHAL?*
+// • Dibuat manual dari nol, bukan copas YouTube
+// • Kode bersih, sudah diuji langsung di banyak grup aktif
+// • Support dan update diberikan langsung oleh pembuat
+// • Fitur stabil dan bisa kamu kembangkan sendiri
+// Jadi, kamu nggak beli “kode asal comot”, tapi beli sistem profesional 🤝
 
----
+// ---
 
-💰 *HARGA SCRIPT:*
-• 35K = *Basic Version* – Full Source Code TANPA bisa rename (Pakai Nama Tacatic) 
-• 60K = *Premium Version* – Full Source Code + Rename Bot (Pakai Nama Kamu) + Panduan Lengkap Termux + Support bantu pasang
+// 💰 *HARGA SCRIPT:*
+// • 35K = *Basic Version* – Full Source Code TANPA bisa rename (Pakai Nama Tacatic) 
+// • 60K = *Premium Version* – Full Source Code + Rename Bot (Pakai Nama Kamu) + Panduan Lengkap Termux + Support bantu pasang
 
-📜 *Lihat daftar fitur lengkap?*
-Ketik: *.fitur*
+// 📜 *Lihat daftar fitur lengkap?*
+// Ketik: *.fitur*
 
-📞 Serius ingin jadi bot sendiri dan punya sistem kayak ini?
-Langsung ketik *.owner* untuk tanya-tanya atau order sekarang juga!`
-  })
-}
+// 📞 Serius ingin jadi bot sendiri dan punya sistem kayak ini?
+// Langsung ketik *.owner* untuk tanya-tanya atau order sekarang juga!`
+//   })
+// }
 
   // 🛡️ List fitur jaga grup + tambahan lainnya
 if (text === '.fitur') {
@@ -157,7 +157,7 @@ if (text === '.mausewa') {
 • .gopay
 • .qris
 
-Setelah transfer, ketik .owner untuk aktivasi bot.`
+Setelah transfer, ketik .owner`
   })
 }
 
