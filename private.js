@@ -18,16 +18,23 @@ if (!db[from].perkenalan) {
   db[from].perkenalan = true
   fs.writeJsonSync(path, db, { spaces: 2 })
   return sock.sendMessage(from, {
-    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_ – Liat semua kekuatan botku!\n• 💸 _.sewa_ – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌`
+    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_ – Liat semua kekuatan botku!\n• 💸 _.sewa_ – Info sewa (murce!)\n• 🛒 _.belisc_  – Beli source code bot ini\n• 🙋‍♂️ _.owner_  – Chat abang owner botku 💌`
   })
 }
 
-  // 📋 Menu utama lucu
-  if (text.toLowerCase() === '.menu') {
-    return sock.sendMessage(from, {
-      text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_  – Liat semua kekuatan botku!\n• 💸 _.sewa_   – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌`
-    })
-  }
+ // 📋 Menu utama lucu
+if (text.toLowerCase() === '.menu') {
+  return sock.sendMessage(from, {
+    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_   – Liat semua kekuatan botku!\n• 💸 _.sewa_ – Info sewa (murce!)\n• 🛒 _.belisc_  – Beli source code bot ini\n• 🙋‍♂️ _.owner_  – Chat abang owner botku 💌`
+  })
+}
+
+// 🛒 Info beli source code
+if (text.toLowerCase() === '.belisc') {
+  return sock.sendMessage(from, {
+    text: `🛒 *BELI SOURCE CODE - TACATIC BOT 04*\n\n📦 *Harap dibaca!*\nIni hanya source code (SC) saja, tidak termasuk, panel, atau deploy ya!\n\nPilih sesuai kebutuhanmu:\n\n1. 🎁 *Tanpa Rename*\n• Nama bot tetap: Tacatic Bot 04\n💰 *Harga: 30.000*\n\n2. ✨ *Bisa Rename Nama Bot*\n• Ganti nama bot sesukamu!\n💰 *Harga: 50.000*\n\n📌 Langsung pilih yang cocok buatmu, cocok buat yang pengen mulai sewa bot 😋`
+  })
+}
 
 //   // 💎 Info Jadi Bot Sendiri (Versi Premium dengan Harga Baru)
 // if (text.toLowerCase() === '.maujadibot') {
@@ -88,15 +95,13 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 • 📢 _.antipromosi on/off_ – Auto hapus iklan
 • 🤬 _.antitoxic on/off_ – Bersihin kata kasar
 • 🗳️ _.antipolling on/off_ – Auto hapus polling WhatsApp
-• 🎉 _.welcome on/off_ – Sambutan lucu untuk member baru
-• 🔚 _.leave on/off_ – Aktifkan kirim pesan saat member keluar
 • 📄 _.setdesc_ – Ubah deskripsi grup
 • 🗣️ _.tagall_ – Panggil semua member
 • 👢 _.kick_ – Tendang member (sopan)
 • 👑 _.promote_ – Angkat jadi admin
 • 🧹 _.demote_ – Turunin admin
-• 🔓 _.open / .open 20.00_ – Buka grup (otomatis juga bisa!)
-• 🔒 _.close / .close 22.00_ – Tutup grup (sesuai jam juga bisa!)
+• 🔓 _.open_ – Buka grup
+• 🔒 _.close_ – Tutup grup
 • 📴 _.dnd on/off_ – Mode Do Not Disturb, bot abaikan command member biasa
 
 🎨 *FITUR LAINNYA*:
@@ -110,7 +115,7 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
   }, { quoted: msg });
 }
 
-  // 💸 Info sewa bot
+// 💸 Info sewa bot
 if (text === '.sewa') {
   return sock.sendMessage(from, {
     text: `📦 *SEWA TACATIC BOT 04*
@@ -119,25 +124,35 @@ Bot ini punya fitur:
 • Auto hapus link & iklan
 • Auto tendang member toxic/spam
 • Welcome + stiker custom (.stiker, .addbrat)
-• Buka/tutup grup otomatis
+• Buka/tutup grup
 • Menu lengkap ketik: .menu
-• Bisa Remove bg & hd
-• Fitur lengkap
+• Bisa remove background & HD
+• Dan masih banyak fitur lainnya!
 
-💰 *Harga Sewa:*
+💰 *Harga Sewa Bot:*
 • 3K = 1 Minggu
 • 5K = 1 Bulan
 • 7K = 2 Bulan
 • 10K = Permanen
 
 🛠️ *Cara Aktifkan Bot:*
-1. Tambahkan bot ke grup
+1. Tambahkan bot ke grup kamu
 2. Jadikan bot sebagai admin
-3. Chat owner untuk aktifkan bot
-4. Bot aktif
+3. Chat owner untuk aktivasi
+4. Bot akan aktif setelah dicek
 
-⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.
-🔑 Jika ingin sewa, ketik *.mausewa*`
+⚠️ *PERINGATAN KERAS!*
+🚫 1 bot hanya untuk *1 grup* saja
+🚫 Dilarang memindahkan bot ke grup lain tanpa izin
+🚫 Dilarang menyewa lalu *menjual grup (jual GB)* ke orang lain *dengan bot tetap di dalam grup*
+🚫 Jika diketahui orang lain (bukan penyewa awal) tetap menggunakan bot ini, *meskipun grup masih sama*, maka bot akan langsung *dikeluarkan dan masuk blacklist*
+🚫 *Tidak ada refund jika melanggar aturan di atas*
+
+📢 *WAJIB MASUK GRUP INFO BOT*
+📌 Grup ini digunakan untuk info update fitur, maintenance, atau masalah teknis.
+📌 Jika tidak masuk grup info dan terjadi masalah, *bukan tanggung jawab owner*.
+
+✅ Untuk sewa dan masuk grup info, ketik: *.mausewa*`
   })
 }
 
@@ -164,14 +179,14 @@ Setelah transfer, ketik .owner`
 // 💰 DANA
 if (text === '.dana') {
   return sock.sendMessage(from, {
-    text: `💰 *PEMBAYARAN DANA*\n\nSilakan transfer ke:\n📲 081334715988 a.n -\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
+    text: `💰 *PEMBAYARAN DANA*\n\nSilakan transfer ke:\n📲 081334715988 a.n -\n\nSetelah transfer, ketik .owner.`
   })
 }
 
 // 💰 GOPAY
 if (text === '.gopay') {
   return sock.sendMessage(from, {
-    text: `💰 *PEMBAYARAN GOPAY*\n\nSilakan transfer ke:\n📲 0895398620405 a.n -\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
+    text: `💰 *PEMBAYARAN GOPAY*\n\nSilakan transfer ke:\n📲 0895398620405 a.n -\n\nSetelah transfer, ketik .owner.`
   })
 }
 
@@ -181,7 +196,7 @@ if (text.toLowerCase() === '.qris') {
   if (fs.existsSync(qrisPath)) {
     await sock.sendMessage(from, {
       image: fs.readFileSync(qrisPath),
-      caption: `📷 *PEMBAYARAN VIA QRIS*\n\nSilakan scan QR di atas untuk membayar.\n\n✅ Setelah bayar, ketik *.owner* untuk aktivasi.`
+      caption: `📷 *PEMBAYARAN VIA QRIS*\n\nSilakan scan QR di atas untuk membayar.\n\n✅ Setelah bayar, ketik *.owner*.`
     })
   } else {
     await sock.sendMessage(from, {
