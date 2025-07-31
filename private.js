@@ -3,7 +3,7 @@ const path = './data_user.json'
 if (!fs.existsSync(path)) fs.writeJsonSync(path, {})
 
 // 🎩 Nomor Owner Bot
-const OWNER_NUM = ['62895379065009', '6285179690350']
+const OWNER_NUM = ['6282333014459', '6285179690350']
 
 module.exports = async (sock, msg) => {
   const from = msg.key.remoteJid
