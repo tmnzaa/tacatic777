@@ -190,20 +190,17 @@ function padTime(num) {
   return num.toString().padStart(2, '0')
 }
 
-// Cek tiap menit
+// Scheduler: Cek setiap menit
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = `${padTime(now.getHours())}.${padTime(now.getMinutes())}`
-  console.log('⏰ Cek waktu sekarang:', jam)
 
   for (const id in dbCache) {
     const fitur = dbCache[id]
     if (!fitur) continue
 
-    const openTime = fitur.openTime?.padStart(5, '0')
-    const closeTime = fitur.closeTime?.padStart(5, '0')
-
-    console.log(`🔍 Grup: ${id}, Open: ${openTime}, Close: ${closeTime}`)
+    const openTime = fitur.openTime ? fitur.openTime.slice(0, 5).replace(':', '.').padStart(5, '0') : null
+    const closeTime = fitur.closeTime ? fitur.closeTime.slice(0, 5).replace(':', '.').padStart(5, '0') : null
 
     try {
       const metadata = await sock.groupMetadata(id).catch(e => {
@@ -220,8 +217,8 @@ schedule.scheduleJob('* * * * *', async () => {
         continue
       }
 
-      // Jalankan openTime jika sesuai jam dan belum diproses
-      if (openTime === jam && fitur.lastOpenProcessed !== jam) {
+      // Jalankan OPEN jika waktunya sesuai dan belum diproses
+      if (openTime && openTime === jam && fitur.lastOpenProcessed !== jam) {
         await sock.groupSettingUpdate(id, 'not_announcement')
         await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${openTime}*` })
         console.log(`✅ Grup ${id} dibuka jam ${openTime}`)
@@ -230,8 +227,8 @@ schedule.scheduleJob('* * * * *', async () => {
         saveDB()
       }
 
-      // Jalankan closeTime jika sesuai jam dan belum diproses
-      if (closeTime === jam && fitur.lastCloseProcessed !== jam) {
+      // Jalankan CLOSE jika waktunya sesuai dan belum diproses
+      if (closeTime && closeTime === jam && fitur.lastCloseProcessed !== jam) {
         await sock.groupSettingUpdate(id, 'announcement')
         await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${closeTime}*` })
         console.log(`🔒 Grup ${id} ditutup jam ${closeTime}`)
