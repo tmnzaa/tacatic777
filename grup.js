@@ -105,9 +105,11 @@ const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
 
-const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
+const senderInfo = metadata.participants.find(p => p.id === sender);
+const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
+
+const botNumber = sock.user.id;
+const botInfo = metadata.participants.find(p => p.id === botNumber);
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
