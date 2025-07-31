@@ -96,7 +96,7 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 }
 
  const OWNER_BOT = [
-  '62895379065009@s.whatsapp.net',
+  '6282333014459@s.whatsapp.net',
   '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
 ];
 
