@@ -104,6 +104,7 @@ const groupOwner = metadata.owner || metadata.participants.find(p => p.admin ===
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
+const isPolling = !!msg.message?.pollCreationMessage;
 
 const senderInfo = metadata.participants.find(p => p.id === sender);
 const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
