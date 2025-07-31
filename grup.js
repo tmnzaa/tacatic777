@@ -108,8 +108,9 @@ const isOwner = isBotOwner || isGroupOwner;
 const senderInfo = metadata.participants.find(p => p.id === sender);
 const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
 
-const botNumber = sock.user.id;
+const botNumber = sock.user.id?.split(':')[0] + '@s.whatsapp.net'; // tambahkan domain WA
 const botInfo = metadata.participants.find(p => p.id === botNumber);
+const isBotAdmin = ['admin', 'superadmin'].includes(botInfo?.admin);
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
@@ -141,7 +142,6 @@ global.strikeCache = strikeDB; // update cache biar tetap sinkron
 }
 
 const botParticipant = metadata.participants.find(p => p.id === botNumber);
-const isBotAdmin = botParticipant && ['admin', 'superadmin'].includes(botParticipant.admin);
 
 if (mentions.includes(botNumber) && !isCommand) return;
 
