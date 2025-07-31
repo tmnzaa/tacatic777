@@ -1,103 +1,161 @@
-  const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason
-  } = require('@whiskeysockets/baileys')
-  const qrcode = require('qrcode-terminal')
-  const P = require('pino')
-  const { Boom } = require('@hapi/boom')
-  const schedule = require('node-schedule')
-  const fs = require('fs-extra')
-  const axios = require('axios')
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason
+} = require('@whiskeysockets/baileys')
+const qrcode = require('qrcode-terminal')
+const P = require('pino')
+const { Boom } = require('@hapi/boom')
+const schedule = require('node-schedule')
+const fs = require('fs-extra')
+const axios = require('axios')
 
-  // === File Database ===
-  const dbFile = './grup.json'
-  let dbCache = {}
+// === File Database ===
+const dbFile = './grup.json'
+let dbCache = {}
 
-  function isValidJson(content) {
+function isValidJson(content) {
+  try {
+    const parsed = JSON.parse(content)
+    return typeof parsed === 'object' && !Array.isArray(parsed)
+  } catch {
+    return false
+  }
+}
+
+if (!fs.existsSync(dbFile)) {
+  console.warn('⚠️ File grup.json tidak ditemukan, membuat file kosong...')
+  fs.writeFileSync(dbFile, '{}', 'utf-8')
+}
+
+try {
+  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+  dbCache = isValidJson(raw) ? JSON.parse(raw) : {}
+} catch (err) {
+  console.error('❌ File grup.json rusak! Reset ke kosong.')
+  fs.writeFileSync(dbFile, '{}', 'utf-8')
+  dbCache = {}
+}
+
+// Simpan DB ke file
+function saveDB() {
+  try {
+    fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
+  } catch (err) {
+    console.error('❌ Gagal menyimpan DB:', err.message)
+  }
+}
+
+let qrShown = false
+
+// === File DND ===
+const dndFile = './dnd.json'
+
+// Buat file dnd.json jika belum ada
+if (!fs.existsSync(dndFile)) {
+  fs.writeJsonSync(dndFile, {}) // kosong default
+}
+
+// Load data DND
+let dndData = {}
+try {
+  dndData = fs.readJsonSync(dndFile)
+} catch (err) {
+  console.error('❌ File dnd.json rusak! Reset ke kosong.')
+  dndData = {}
+  fs.writeJsonSync(dndFile, {})
+}
+
+function saveDnd() {
+  fs.writeJsonSync(dndFile, dndData, { spaces: 2 })
+}
+
+async function startBot() {
+  const { state, saveCreds } = await useMultiFileAuthState('./session')
+
+  const sock = makeWASocket({
+    auth: state,
+    logger: P({ level: 'silent' }),
+    printQRInTerminal: false
+  })
+
+  sock.ev.on('creds.update', saveCreds)
+
+  sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
+    if (qr && !qrShown) {
+      qrShown = true
+      console.log('\n📲 Scan QR untuk login:')
+      qrcode.generate(qr, { small: true })
+    }
+
+    if (connection === 'open') {
+      console.log('✅ Bot berhasil terhubung ke WhatsApp!')
+    }
+
+    if (connection === 'close') {
+      const code = new Boom(lastDisconnect?.error)?.output?.statusCode
+      const reconnect = code !== DisconnectReason.loggedOut
+      console.log('❌ Terputus. Reconnect:', reconnect)
+      qrShown = false
+      if (reconnect) startBot()
+    }
+  })
+
+  // ✅ Fungsi cek admin
+  async function isAdmin(sock, jid, sender) {
     try {
-      const parsed = JSON.parse(content)
-      return typeof parsed === 'object' && !Array.isArray(parsed)
+      const metadata = await sock.groupMetadata(jid)
+      const admins = metadata.participants.filter(p => p.admin)
+      return admins.some(p => p.id === sender)
     } catch {
       return false
     }
   }
 
-  if (!fs.existsSync(dbFile)) {
-    console.warn('⚠️ File grup.json tidak ditemukan, membuat file kosong...')
-    fs.writeFileSync(dbFile, '{}', 'utf-8')
-  }
-
-  try {
-    const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-    dbCache = isValidJson(raw) ? JSON.parse(raw) : {}
-  } catch (err) {
-    console.error('❌ File grup.json rusak! Reset ke kosong.')
-    fs.writeFileSync(dbFile, '{}', 'utf-8')
-    dbCache = {}
-  }
-
-  // Simpan DB ke file
-  function saveDB() {
-    try {
-      fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
-    } catch (err) {
-      console.error('❌ Gagal menyimpan DB:', err.message)
-    }
-  }
-
-  let qrShown = false
-
-  // // === Cache DB agar tidak delay ===
-  // try {
-  //   const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  //   dbCache = raw === '' ? {} : JSON.parse(raw)
-  // } catch (e) {
-  //   dbCache = {}
-  // }
-
-  async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState('./session')
-
-    const sock = makeWASocket({
-      auth: state,
-      logger: P({ level: 'silent' }),
-      printQRInTerminal: false
-    })
-
-    sock.ev.on('creds.update', saveCreds)
-
-    sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
-      if (qr && !qrShown) {
-        qrShown = true
-        console.log('\n📲 Scan QR untuk login:')
-        qrcode.generate(qr, { small: true })
-      }
-
-      if (connection === 'open') {
-        console.log('✅ Bot berhasil terhubung ke WhatsApp!')
-      }
-
-      if (connection === 'close') {
-        const code = new Boom(lastDisconnect?.error)?.output?.statusCode
-        const reconnect = code !== DisconnectReason.loggedOut
-        console.log('❌ Terputus. Reconnect:', reconnect)
-        qrShown = false
-        if (reconnect) startBot()
-      }
-    })
-
-    // 📥 Message handler
+  // 📥 Message handler
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0]
     if (!msg.message) return
-  if (!msg.key.remoteJid || !msg.key.id || msg.key.id.startsWith('BAE5') || msg.key.fromMe) return
+    if (!msg.key.remoteJid || !msg.key.id || msg.key.id.startsWith('BAE5') || msg.key.fromMe) return
 
     const from = msg.key.remoteJid
     const sender = msg.key.participant || msg.key.remoteJid
-  let db = dbCache
+    const pesan = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
+    const isCmd = pesan.startsWith('.')
+    const isGroup = from.endsWith('@g.us')
+    const isDndActive = dndData[from]
+    const senderNumber = sender.split('@')[0]
 
+    let db = dbCache
     const fitur = db[from]
+
+    // ✅ Perintah DND
+    if (isGroup && isCmd && pesan === '.dnd on') {
+      const admin = await isAdmin(sock, from, sender)
+      if (!admin) return sock.sendMessage(from, { text: '❌ Hanya admin yang bisa aktifkan DND.' }, { quoted: msg })
+      dndData[from] = true
+      saveDnd()
+      return sock.sendMessage(from, { text: '✅ Mode DND diaktifkan. Member tidak bisa gunakan fitur.' }, { quoted: msg })
+    }
+
+    if (isGroup && isCmd && pesan === '.dnd off') {
+      const admin = await isAdmin(sock, from, sender)
+      if (!admin) return sock.sendMessage(from, { text: '❌ Hanya admin yang bisa matikan DND.' }, { quoted: msg })
+      delete dndData[from]
+      saveDnd()
+      return sock.sendMessage(from, { text: '☑️ Mode DND dinonaktifkan.' }, { quoted: msg })
+    }
+
+    // ❌ Blok fitur jika DND aktif dan bukan admin
+    if (isGroup && isCmd && isDndActive) {
+      const admin = await isAdmin(sock, from, sender)
+      if (!admin) {
+        return sock.sendMessage(from, {
+          text: `🚫 Mode DND aktif. @${senderNumber} tidak diizinkan pakai fitur.`,
+          mentions: [sender]
+        }, { quoted: msg })
+      }
+    }
 
     // ✅ ANTIPOLLING
     if (fitur?.antipolling && msg.message.pollCreationMessage) {
@@ -126,128 +184,21 @@
 
     // Handler lain
     try {
-  if (!global.handleGrup) global.handleGrup = require('./grup')
-  if (!global.handlePrivate) global.handlePrivate = require('./private')
+      if (!global.handleGrup) global.handleGrup = require('./grup')
+      if (!global.handlePrivate) global.handlePrivate = require('./private')
 
-  global.handleGrup(sock, msg)
-  global.handlePrivate(sock, msg)
+      global.handleGrup(sock, msg)
+      global.handlePrivate(sock, msg)
 
     } catch (err) {
       console.error('💥 Error handle pesan:', err)
     }
   })
-
-  sock.ev.on('group-participants.update', async (update) => {
-    try {
-      const fitur = dbCache[update.id]
-      if (!fitur || (!fitur.welcome && !fitur.leave)) return
-
-      const metadata = await sock.groupMetadata(update.id)
-      const groupName = metadata.subject
-      const imagePath = './ronaldo.jpg'
-
-      for (const jid of update.participants) {
-        // Cari nama user, fallback ke tag
-        let name = `@${jid.split('@')[0]}`
-        try {
-          const contact = await sock.onWhatsApp(jid)
-          name = contact?.[0]?.notify || name
-        } catch {}
-
-        const tagUser = `@${jid.split('@')[0]}`
-        const mentions = [jid]
-
-        // 🟢 WELCOME
-        if (update.action === 'add' && fitur.welcome) {
-          const teks = `👋 *${name}* (${tagUser}) baru saja bergabung ke *${groupName}*.\n\n📜 _"Aturan bukan buat membatasi, tapi buat menjaga kenyamanan bersama."_ \n\nSebelum mulai interaksi atau promosi, silakan *baca rules di deskripsi grup*.\n\n📌 Di sini kita jaga suasana tetap rapi dan nyaman. Hormati aturan, hargai sesama.\n\n— Bot Taca standby. 🤖`
-
-          await sock.sendMessage(update.id, {
-            image: fs.readFileSync(imagePath),
-            caption: teks,
-            mentions
-          })
-        }
-
-        // 🔴 LEAVE
-        if (update.action === 'remove' && fitur.leave) {
-          const teks = `👋 *${name}* telah meninggalkan grup.\n\n_"Tidak semua perjalanan harus diselesaikan bersama. Terima kasih sudah pernah menjadi bagian dari *${groupName}*."_
-
-  — Bot Taca`
-          await sock.sendMessage(update.id, {
-            image: fs.readFileSync(imagePath),
-            caption: teks,
-            mentions
-          })
-        }
-      }
-    } catch (err) {
-      console.error('❌ Error welcome/leave:', err)
-    }
-  })
-
-// Padding waktu jadi dua digit
-function padTime(num) {
-  return num.toString().padStart(2, '0')
 }
 
-// Scheduler: Cek setiap menit
-schedule.scheduleJob('* * * * *', async () => {
-  const now = new Date()
-  const jam = `${padTime(now.getHours())}.${padTime(now.getMinutes())}`
-
-  for (const id in dbCache) {
-    const fitur = dbCache[id]
-    if (!fitur) continue
-
-    const openTime = fitur.openTime ? fitur.openTime.slice(0, 5).replace(':', '.').padStart(5, '0') : null
-    const closeTime = fitur.closeTime ? fitur.closeTime.slice(0, 5).replace(':', '.').padStart(5, '0') : null
-
-    try {
-      const metadata = await sock.groupMetadata(id).catch(e => {
-        console.warn(`⚠️ Gagal ambil metadata grup ${id}: ${e.message || e}`)
-        return null
-      })
-      if (!metadata) continue
-
-      const botNumber = sock.user?.id?.split(':')[0] + '@s.whatsapp.net'
-      const botParticipant = metadata.participants.find(p => p.id === botNumber)
-
-      if (!botParticipant || !(botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin')) {
-        console.log(`❌ Bot bukan admin di grup ${id}, skip.`)
-        continue
-      }
-
-      // Jalankan OPEN jika waktunya sesuai dan belum diproses
-      if (openTime && openTime === jam && fitur.lastOpenProcessed !== jam) {
-        await sock.groupSettingUpdate(id, 'not_announcement')
-        await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${openTime}*` })
-        console.log(`✅ Grup ${id} dibuka jam ${openTime}`)
-        fitur.lastOpenProcessed = jam
-        delete fitur.openTime
-        saveDB()
-      }
-
-      // Jalankan CLOSE jika waktunya sesuai dan belum diproses
-      if (closeTime && closeTime === jam && fitur.lastCloseProcessed !== jam) {
-        await sock.groupSettingUpdate(id, 'announcement')
-        await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${closeTime}*` })
-        console.log(`🔒 Grup ${id} ditutup jam ${closeTime}`)
-        fitur.lastCloseProcessed = jam
-        delete fitur.closeTime
-        saveDB()
-      }
-
-    } catch (err) {
-      console.error(`❌ Gagal proses grup ${id}:`, err.message || err)
-    }
-  }
+// 🛠 Global error
+process.on('unhandledRejection', err => {
+  console.error('💥 Unhandled Rejection:', err)
 })
 
-  }
-
-  // 🛠 Global error
-  process.on('unhandledRejection', err => {
-    console.error('💥 Unhandled Rejection:', err)
-  })
-
-  startBot()
+startBot()
