@@ -187,7 +187,7 @@ fs.writeJsonSync(dbFile, db, { spaces: 2 })
 }
 
 const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2', '.hdv2',];
-  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif', '.hapus'];
+  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif', '.hapus'];
 
   const cmdUtama = text.trim().split(' ')[0].toLowerCase()
   const fullCmd = text.trim().toLowerCase()
@@ -204,7 +204,7 @@ if (isBotAktif && !isBotAdmin) {
   '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
   '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
   '.antipolling on', '.antipolling off',
-  '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
+  '.open', '.close', '.tagall', '.kick',
   '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.hdv2', '.removebg', '.bratv2',
   '.setdesc', '.leave on', '.leave off', '.polling on', '.polling off',
   '.afk', '.dnd on', '.dnd off',
@@ -365,16 +365,14 @@ if (text === '.menu') {
 • 📊 _.antipolling on/off_ → Hapus polling yang dikirim
 
 🎉 *FITUR SOSIAL & INTERAKSI*:
-• 🎉 _.welcome on/off_  → Sambutan buat member baru
-• 📴 _.leave on/off_ → Kirim pesan saat member keluar
 • 🗣️ _.tagall_  → Mention semua member aktif
 • 👢 _.kick_  → Tendang member (admin only)
 
 🛠️ *FITUR MANAJEMEN GRUP*:
 • 👑 _.promote_ → Jadikan member jadi admin
 • 🧹 _.demote_ → Turunin admin
-• 🔓 _.open_ / _.open 20.00_ → Buka grup / jadwal buka
-• 🔒 _.close_ / _.close 22.00_ → Tutup grup / jadwal tutup
+• 🔓 _.open_ → Buka grup
+• 🔒 _.close_ → Tutup grup
 • 📄 _.setdesc_ → Ubah deskripsi grup
 • 🧽 _.hapus_ → Hapus pesan member
 • 💡 _.cekaktif_ → Cek fitur aktif
@@ -473,7 +471,7 @@ fs.writeJsonSync(dbFile, db, { spaces: 2 })
   }, { quoted: msg });
 }
 
- const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
+ const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'leave', 'antipolling']
 
 for (let f of fiturList) {
   if (text === `.${f} on`) {
@@ -728,7 +726,7 @@ const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin
 }
 
  if (text === '.cekaktif') {
-  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'dnd']
+  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'leave', 'antipolling', 'dnd']
   let aktif = ''
   let mati = ''
 
