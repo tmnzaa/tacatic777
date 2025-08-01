@@ -95,39 +95,40 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   }
 }
 
- const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
+const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
 // Ambil metadata grup
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
-// Format JID bot sesuai standar
-const botJid = (sock.user?.id || '').split(':')[0] + '@s.whatsapp.net';
+// Format JID bot agar cocok dengan data di participants
+const rawBotId = sock.user?.id || '';
+const botJid = rawBotId.includes(':') ? rawBotId.split(':')[0] + '@s.whatsapp.net' : rawBotId;
 
-// Cari data bot dan pengirim
+// Cari info peserta
 const botInfo = participants.find(p => p.id === botJid);
 const senderInfo = participants.find(p => p.id === sender);
 
-// Cek admin
+// Cek apakah admin
 const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
 const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
 
-// Cek owner grup dan owner bot
-const groupOwner = groupMetadata?.owner || participants.find(p => p.admin === 'superadmin')?.id || '';
+// Cek owner grup & owner bot
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id || '';
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
 
-// Debug log
+// DEBUG
 console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot JID:', sock.user?.id);
-console.log('Bot Formatted:', botJid);
+console.log('Raw Bot JID:', rawBotId);
+console.log('Formatted Bot JID:', botJid);
 console.log('Sender:', sender);
 console.log('Jumlah Peserta:', participants.length);
 console.log('Bot Admin:', isBotAdmin);
 console.log('Sender Admin:', isAdmin);
-console.log('Owner Group:', groupOwner);
-console.log('Sender Owner:', isOwner);
+console.log('Group Owner:', groupOwner);
+console.log('Sender is Owner:', isOwner);
 console.log('────────────────────────────');
 
 // Inisialisasi & update database grup
