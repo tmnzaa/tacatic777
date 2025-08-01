@@ -83,7 +83,6 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
   }
 
   global.groupCache = global.groupCache || {}
-let metadata = global.groupCache[from]
 
 if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
@@ -96,30 +95,45 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 }
 
  const OWNER_BOT = [
-  '62895379065009@s.whatsapp.net',
-  '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
+  '6282333014459@s.whatsapp.net',
 ];
 
+// Ambil metadata grup (wajib await)
+const metadata = await sock.groupMetadata(from);
+
+// Pastikan botNumber sesuai format WA JID
+const botNumber = sock.user?.id.includes('@')
+  ? sock.user.id
+  : sock.user.id.split(':')[0] + '@s.whatsapp.net';
+
+// Cek apakah pengirim adalah owner grup / bot
 const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
 
-const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
-const botNumber = sock.user?.id?.includes('@') ? sock.user.id : sock.user.id.split(':')[0] + '@s.whatsapp.net';
-const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
+// Cek apakah pengirim admin
+const senderRole = metadata.participants.find(p => p.id === sender)?.admin;
+const isAdmin = ['admin', 'superadmin'].includes(senderRole);
 
+// Cek apakah bot adalah admin
+const botRole = metadata.participants.find(p => p.id === botNumber)?.admin;
+const isBotAdmin = ['admin', 'superadmin'].includes(botRole);
+
+// Cek polling, data grup, cache DB
+const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
 db[from] = db[from] || {};
 db[from].nama = metadata.subject;
 const fitur = db[from];
 db[from].dnd = db[from].dnd || false;
-fs.writeJsonSync(dbFile, db, { spaces: 2 })
+fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
+// Anti polling
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   await sock.sendMessage(from, { delete: msg.key });
 
@@ -133,20 +147,20 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
     delete strikeDB[from][sender];
   }
 
-await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
-global.strikeCache = strikeDB; // update cache biar tetap sinkron
+  await fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+  global.strikeCache = strikeDB;
   return;
 }
 
-const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
-
+// Cegah jika hanya disapa (mention) tanpa command
 if (mentions.includes(botNumber) && !isCommand) return;
 
+// Fitur aktivasi bot
 if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
       text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
-     }, { quoted: msg });
+    }, { quoted: msg });
   }
 
   if (!isOwner) {
@@ -155,7 +169,6 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     }, { quoted: msg });
   }
 
-  const now = new Date();
   const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
 
   if (fitur.permanen || (expiredDate && expiredDate >= now)) {
@@ -172,13 +185,13 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     if (!isOwner) {
       return sock.sendMessage(from, {
         text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
-       }, { quoted: msg });
+      }, { quoted: msg });
     }
     fitur.permanen = true;
     fitur.expired = null;
   }
 
-fs.writeJsonSync(dbFile, db, { spaces: 2 })
+  fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
   return sock.sendMessage(from, {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
