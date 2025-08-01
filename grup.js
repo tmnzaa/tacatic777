@@ -104,11 +104,12 @@ const isOwner = isBotOwner || isGroupOwner;
 
 const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
 
-// Fix botJid handling
-const botJid = (sock?.user?.id?.split(':')[0] || '') + '@s.whatsapp.net';
+// Fix JID bot (tanpa split ':')
+const botJid = sock?.user?.id || '';
 const isBotAdmin = metadata.participants.find(p => p.id === botJid)?.admin !== undefined;
 
-const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
+console.log('DEBUG >> Bot JID:', botJid);
+console.log('DEBUG >> Bot is Admin?', isBotAdmin);
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
