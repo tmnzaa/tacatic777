@@ -99,37 +99,34 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   '6282333014459@s.whatsapp.net',
 ];
 
-// Ambil metadata grup terbaru
 const groupMetadata = await sock.groupMetadata(from);
+await new Promise(resolve => setTimeout(resolve, 2000)); // delay biar metadata update
 const participants = groupMetadata?.participants || [];
 
-// Ambil ID bot yang benar (hapus :1 jika ada)
-const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net';
+const botJid = sock?.user?.id?.includes('@') ? sock.user.id : sock.user.id + '@s.whatsapp.net';
 
-// Ambil info peserta
 const senderInfo = participants.find(p => p.id === sender);
 const botInfo = participants.find(p => p.id === botJid);
 
-// Cek status admin
 const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
 const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
 
-// Cek pemilik grup & pemilik bot
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = Array.isArray(OWNER_BOT) ? OWNER_BOT.includes(sender) : sender === OWNER_BOT;
 const isOwner = isGroupOwner || isBotOwner;
 
-// Debug log
 console.log('──── DEBUG ADMIN CHECK ────');
 console.log('Bot JID:', botJid);
 console.log('Sender:', sender);
 console.log('Jumlah Peserta:', participants.length);
+console.log('Bot Info:', botInfo);
 console.log('Bot Admin:', isBotAdmin);
 console.log('Sender Admin:', isAdmin);
 console.log('Owner Group:', groupOwner);
 console.log('Sender Owner:', isOwner);
 console.log('────────────────────────────');
+
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
