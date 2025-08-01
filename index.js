@@ -184,8 +184,8 @@ async function startBot() {
 
     // Handler lain
     try {
-if (!global.handleGrup) global.handleGrup = (await import('./grup.js')).default
-global.handlePrivate = (await import('./private.js')).default
+      if (!global.handleGrup) global.handleGrup = require('./grup')
+      if (!global.handlePrivate) global.handlePrivate = require('./private')
 
       global.handleGrup(sock, msg)
       global.handlePrivate(sock, msg)
