@@ -82,47 +82,41 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-// Inisialisasi cache grup (kalau belum ada)
+// Inisialisasi cache grup kalau belum ada
 if (!global.groupCache) global.groupCache = {};
 
-// Ambil metadata dari cache atau fetch baru kalau sudah lewat 5 menit
-let metadata = global.groupCache[from];
-if (!metadata || Date.now() - metadata._cachedAt > 300000) {
+// Ambil metadata grup dari cache atau fetch baru jika lebih dari 5 menit
+let groupMetadata = global.groupCache[from];
+if (!groupMetadata || Date.now() - groupMetadata._cachedAt > 300000) {
   try {
-    metadata = await sock.groupMetadata(from);
-    metadata._cachedAt = Date.now();
-    global.groupCache[from] = metadata;
+    groupMetadata = await sock.groupMetadata(from);
+    groupMetadata._cachedAt = Date.now();
+    global.groupCache[from] = groupMetadata;
   } catch (err) {
-    return; // Jangan spam console kalau error
+    console.log('❌ Gagal ambil metadata grup:', err.message);
+    return; // Stop agar tidak lanjut jika metadata gagal
   }
 }
 
-// Ambil peserta grup
-const participants = metadata?.participants || [];
+// Ambil daftar peserta grup
+const participants = groupMetadata?.participants || [];
 
 // Format JID bot
 const botIdRaw = sock?.user?.id || '';
-const botJid = botIdRaw.includes(':')
-  ? botIdRaw.split(':')[0] + '@s.whatsapp.net'
-  : botIdRaw;
+const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw;
 
 // Cari data peserta bot dan pengirim
 const botParticipant = participants.find(p => p.id === botJid);
 const senderParticipant = participants.find(p => p.id === sender);
 
-// Cek status admin bot & pengirim
-const isBotAdmin =
-  botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
+// Cek status admin
+const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
+const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
 
-const isAdmin =
-  senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
-
-// Cek owner
+// Cek owner bot dan owner grup
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 const isBotOwner = OWNER_BOT.includes(sender);
-const groupOwner =
-  metadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
-
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isOwner = isBotOwner || isGroupOwner;
 
