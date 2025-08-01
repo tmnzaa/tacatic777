@@ -94,19 +94,19 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
     return // jangan spam console
   }
 }
-
+// Ambil metadata grup
 const groupMetadata = await sock.groupMetadata(from);
+const participants = groupMetadata?.participants || [];
 
-// Dapatkan JID bot dari `sock.user.id`
+// Ambil JID bot (tanpa tambahan @s.whatsapp.net, karena sudah ada di participants)
 const botJid = (sock?.user?.id || '').split(':')[0] + '@s.whatsapp.net';
 
-// Deteksi apakah bot admin langsung dari `groupMetadata`
-const isBotAdmin = groupMetadata.participants?.some(p => 
-  (p.id === botJid || p.id.startsWith(botJid)) &&
-  (p.admin === 'admin' || p.admin === 'superadmin')
+// Cek apakah bot adalah admin di grup
+const isBotAdmin = participants.some(p =>
+  p.id === botJid && ['admin', 'superadmin'].includes(p.admin)
 );
 
-// Debug
+// Debug log
 console.log('✅ BOT JID:', botJid);
 console.log('✅ Bot Admin:', isBotAdmin);
 
@@ -125,17 +125,18 @@ const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
 // Owner & Admin Check
-const senderParticipant = groupMetadata.participants?.find(p => p.id === sender);
-const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
+const senderParticipant = participants.find(p => p.id === sender);
+const isAdmin = ['admin', 'superadmin'].includes(senderParticipant?.admin);
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 const isBotOwner = OWNER_BOT.includes(sender);
-const groupOwner = groupMetadata.owner || groupMetadata.participants?.find(p => p.admin === 'superadmin')?.id;
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isOwner = isBotOwner || isGroupOwner;
 
 // Fitur anti polling
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
+  // blokir p
 
   await sock.sendMessage(from, { delete: msg.key });
 
