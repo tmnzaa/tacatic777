@@ -121,7 +121,7 @@ const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin'
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isBotOwner; // OWNER_BOT.includes(sender
+const isOwner = isGroupOwner || isBotOwner;
 
 // // Debug log
 // console.log(`──────── DEBUG ADMIN CHECK ────────`);
