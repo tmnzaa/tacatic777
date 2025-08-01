@@ -101,33 +101,31 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 ];
 
 // Ambil metadata grup terbaru
-const freshMetadata = await sock.groupMetadata(from);
-const participants = freshMetadata.participants;
+const groupMetadata = await sock.groupMetadata(from);
+const participants = groupMetadata.participants;
 
-// Ambil ID bot (tanpa ':') agar cocok dengan format di participants
-const fullBotID = sock.user?.id; // contoh: 6285179690350:12@s.whatsapp.net
-const botNumber = fullBotID.includes(':')
-  ? fullBotID.split(':')[0] + '@s.whatsapp.net' // jadi: 6285179690350@s.whatsapp.net
-  : fullBotID;
+// Ambil ID bot (contoh: 6285179690350:12@s.whatsapp.net atau 6285179690350@s.whatsapp.net)
+const fullBotID = sock.user?.id || '';
+const botJid = fullBotID.includes(':') ? fullBotID.split(':')[0] + '@s.whatsapp.net' : fullBotID;
 
 // Cari info peserta
 const senderInfo = participants.find(p => p.id === sender);
-const botInfo = groupMetadata.participants.find(p => p.id.includes(botNumber.split('@')[0]))
+const botInfo = participants.find(p => p.id === botJid);
 
-// Status admin
-const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
-const isBotAdmin = ['admin', 'superadmin'].includes(botInfo?.admin);
+// Cek status admin
+const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
+const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
 
 // Cek pemilik grup & pemilik bot
-const groupOwner = freshMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
-const isBotOwner = OWNER_BOT.includes(sender); // OWNER_BOT = array of owner number
-const isOwner = isBotOwner || isGroupOwner;
+const isBotOwner = OWNER_BOT.includes(sender);
+const isOwner = isGroupOwner || isBotOwner;
 
-// Debug log tambahan
+// Debug log
 console.log(`──────── DEBUG ADMIN CHECK ────────`);
 console.log('Bot Raw ID:', fullBotID);
-console.log('Bot Number:', botNumber);
+console.log('Bot Number (Cleaned):', botJid);
 console.log('Sender:', sender);
 console.log('Participants (jumlah):', participants.length);
 console.log('Bot Info:', botInfo);
