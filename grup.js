@@ -82,12 +82,10 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-  global.groupCache = global.groupCache || {}
-
 // Inisialisasi cache grup (kalau belum ada)
 if (!global.groupCache) global.groupCache = {};
 
-// Ambil metadata dari cache atau fetch baru kalau sudah lewat 5 menit
+// Ambil metadata dari cache atau fetch baru jika lebih dari 5 menit
 let metadata = global.groupCache[from];
 if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
@@ -95,31 +93,36 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
     metadata._cachedAt = Date.now();
     global.groupCache[from] = metadata;
   } catch (err) {
-    return; // Jangan spam console
+    return; // Gagal ambil metadata, keluar saja
   }
 }
 
 // Ambil peserta grup
 const participants = metadata?.participants || [];
 
-// Format JID bot
+// Format JID bot (agar aman dari format JID dengan ":")
 const botIdRaw = sock?.user?.id || '';
 const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw;
 
-// Cari data peserta bot dan pengirim
+// Temukan peserta bot dan pengirim
 const botParticipant = participants.find(p => p.id === botJid);
 const senderParticipant = participants.find(p => p.id === sender);
 
-// Cek status admin bot & pengirim
-const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
-const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
+// Cek status admin bot dan pengirim
+const isBotAdmin = ['admin', 'superadmin'].includes(botParticipant?.admin);
+const isAdmin = ['admin', 'superadmin'].includes(senderParticipant?.admin);
 
-// Cek owner
+// Cek apakah sender adalah owner
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 const isBotOwner = OWNER_BOT.includes(sender);
+
+// Cek owner grup
 const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
+
+// Gabungan owner bot atau grup
 const isOwner = isBotOwner || isGroupOwner;
+
 
 // (opsional)
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
