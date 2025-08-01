@@ -97,42 +97,38 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
-// Ambil metadata grup
-const groupMetadata = await sock.groupMetadata(from);
-const participants = groupMetadata?.participants || [];
+const groupMetadata = await sock.groupMetadata(from)
+const participants = groupMetadata?.participants || []
 
-// Ambil ID bot yang sedang digunakan
-const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net'; // ini format standar ID bot
-const senderJid = sender; // sender sudah pasti ada
+// Cek ID bot yang benar-benar cocok
+const botNumber = sock?.user?.id?.split(':')[0] || ''
+const botJid = botNumber.endsWith('@s.whatsapp.net') ? botNumber : botNumber + '@s.whatsapp.net'
 
-// Cari data bot dan pengirim dalam daftar peserta grup
-const botInfo = participants.find(p => p.id === botJid);
-const senderInfo = participants.find(p => p.id === senderJid);
+// Ambil info peserta bot dan pengirim
+const botInfo = participants.find(p => p.id.includes(botNumber))
+const senderInfo = participants.find(p => p.id === sender)
 
-// Cek apakah pengirim adalah admin
-const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
+// Cek apakah admin
+const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin'
+const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin'
 
-// Cek apakah bot adalah admin
-const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
+// Cek owner grup
+const groupOwner = groupMetadata?.owner || participants.find(p => p.admin === 'superadmin')?.id || ''
+const isGroupOwner = sender === groupOwner
+const isBotOwner = OWNER_BOT.includes(sender)
+const isOwner = isGroupOwner || isBotOwner
 
-// Cek owner grup (kadang bisa null)
-const groupOwner = groupMetadata?.owner || participants.find(p => p.admin === 'superadmin')?.id || '';
-
-// Cek apakah pengirim adalah owner grup atau owner bot
-const isGroupOwner = sender === groupOwner;
-const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isGroupOwner || isBotOwner;
-
-// DEBUG LOG
-console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot JID:', botJid);
-console.log('Sender JID:', senderJid);
-console.log('Jumlah Peserta:', participants.length);
-console.log('Bot Admin:', isBotAdmin);
-console.log('Sender Admin:', isAdmin);
-console.log('Group Owner:', groupOwner);
-console.log('Sender Owner:', isOwner);
-console.log('────────────────────────────');
+// Debug log
+console.log('──── DEBUG ADMIN CHECK ────')
+console.log('Bot JID:', botJid)
+console.log('Bot Number:', botNumber)
+console.log('Sender:', sender)
+console.log('Jumlah Peserta:', participants.length)
+console.log('Bot Admin:', isBotAdmin)
+console.log('Sender Admin:', isAdmin)
+console.log('Group Owner:', groupOwner)
+console.log('Sender Owner:', isOwner)
+console.log('────────────────────────────')
 
 
 // Inisialisasi & update database grup
