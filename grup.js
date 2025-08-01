@@ -97,38 +97,37 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
-// Ambil metadata grup terbaru
+// Ambil metadata grup
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
-// Deteksi semua ID bot yang mungkin muncul di participants
-const botIdRaw = sock?.user?.id || '';
-const botJid1 = botIdRaw;
-const botJid2 = botIdRaw.split(':')[0] + '@s.whatsapp.net';
-const botJid3 = botIdRaw.split(':')[0] + '@net';
+// Ambil ID bot yang sedang digunakan
+const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net'; // ini format standar ID bot
+const senderJid = sender; // sender sudah pasti ada
 
-const botInfo = participants.find(p =>
-  p.id === botJid1 ||
-  p.id === botJid2 ||
-  p.id === botJid3
-);
+// Cari data bot dan pengirim dalam daftar peserta grup
+const botInfo = participants.find(p => p.id === botJid);
+const senderInfo = participants.find(p => p.id === senderJid);
 
-const senderInfo = participants.find(p => p.id === sender);
-
-// Cek admin
+// Cek apakah pengirim adalah admin
 const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
+
+// Cek apakah bot adalah admin
 const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
 
-// Cek owner grup & owner bot
-const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id || '';
+// Cek owner grup (kadang bisa null)
+const groupOwner = groupMetadata?.owner || participants.find(p => p.admin === 'superadmin')?.id || '';
+
+// Cek apakah pengirim adalah owner grup atau owner bot
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isBotOwner || isGroupOwner;
+const isOwner = isGroupOwner || isBotOwner;
 
 // DEBUG LOG
 console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot Raw ID:', botIdRaw);
-console.log('Possible Bot JIDs:', [botJid1, botJid2, botJid3]);
+console.log('Bot JID:', botJid);
+console.log('Sender JID:', senderJid);
+console.log('Jumlah Peserta:', participants.length);
 console.log('Bot Admin:', isBotAdmin);
 console.log('Sender Admin:', isAdmin);
 console.log('Group Owner:', groupOwner);
