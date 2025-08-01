@@ -100,16 +100,14 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
 ];
 
-// Ambil metadata grup
+// Ambil metadata grup terbaru
 const groupMetadata = await sock.groupMetadata(from);
-const participants = groupMetadata?.participants || [];
+const participants = groupMetadata.participants || [];
 
-// ID bot & pengirim
-const fullBotID = sock?.user?.id || ''; // Contoh: 6285179690350:12@s.whatsapp.net
-const botNumber = fullBotID.split(':')[0]; // Ambil 6285179690350
-const botJid = botNumber + '@s.whatsapp.net'; // Jadikan full JID
+// Ambil ID bot lengkap
+const botJid = sock.user.id; // ID bot sudah dalam format lengkap (misalnya: 628xxx@s.whatsapp.net)
 
-// Ambil info peserta & bot dari grup
+// Cari info peserta
 const senderInfo = participants.find(p => p.id === sender);
 const botInfo = participants.find(p => p.id === botJid);
 
@@ -117,27 +115,28 @@ const botInfo = participants.find(p => p.id === botJid);
 const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
 const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
 
-// Cek owner grup
+// Cek pemilik grup & pemilik bot
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
+const isBotOwner = OWNER_BOT.includes(sender);
+const isOwner = isGroupOwner || isBotOwner;
 
-// Cek pemilik bot
-const isBotOwner = OWNER_BOT?.includes(sender); // OWNER_BOT harus array berisi ID
-const isOwner = isBotOwner || isGroupOwner;
+// Cek apakah pesan polling
+const isPolling = !!msg.message?.pollCreationMessage;
 
-// Cek polling
-const isPolling = !!msg?.message?.pollCreationMessage;
-
-// Database
+// Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
+
 db[from] = db[from] || {};
 db[from].nama = groupMetadata.subject;
-const fitur = db[from];
 db[from].dnd = db[from].dnd || false;
+
+const fitur = db[from];
+
 fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
-// Cek status aktif
+// Cek status aktif bot
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
@@ -157,13 +156,14 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
 
   await fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
   global.strikeCache = strikeDB;
+
   return;
 }
 
-// Jika bot disebut tapi bukan command, jangan balas
-if (mentions.includes(botNumber) && !isCommand) return;
+// Abaikan mention ke bot jika bukan command
+if (mentions.includes(botJid) && !isCommand) return;
 
-// Aktivasi bot
+// Perintah aktivasi bot
 if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
@@ -178,12 +178,14 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   }
 
   const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
+
   if (fitur.permanen || (expiredDate && expiredDate >= now)) {
     return sock.sendMessage(from, {
       text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
     });
   }
 
+  // Set masa aktif sesuai harga
   if (text === '.aktifbot3k') fitur.expired = tambahHari(7);
   if (text === '.aktifbot5k') fitur.expired = tambahHari(30);
   if (text === '.aktifbot7k') fitur.expired = tambahHari(60);
@@ -204,7 +206,6 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
   }, { quoted: msg });
 }
-
 
 const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2', '.hdv2',];
   const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif', '.hapus'];
