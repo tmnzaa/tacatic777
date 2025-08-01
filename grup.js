@@ -103,7 +103,11 @@ const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
 
 const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+
+// Fix botJid handling
+const botJid = (sock?.user?.id?.split(':')[0] || '') + '@s.whatsapp.net';
+const isBotAdmin = metadata.participants.find(p => p.id === botJid)?.admin !== undefined;
+
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
 // Inisialisasi & update database grup
