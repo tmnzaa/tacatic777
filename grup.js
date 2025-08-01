@@ -104,12 +104,10 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
-// Ambil ID bot lengkap (harus aman)
-const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net'; // Format: 628xxx@s.whatsapp.net
-
-// Cari info peserta
+// Ambil ID bot
+const botId = sock?.user?.id; // Contoh: 628xxx:1@server.whatsapp.net
 const senderInfo = participants.find(p => p.id === sender);
-const botInfo = participants.find(p => p.id === botJid);
+const botInfo = participants.find(p => p.id?.includes(botId));
 
 // Cek status admin
 const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
@@ -124,9 +122,9 @@ const isOwner = isGroupOwner || isBotOwner;
 // Cek apakah pesan polling
 const isPolling = !!msg.message?.pollCreationMessage;
 
-// Debug log (optional)
+// Debug log
 console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot JID:', botJid);
+console.log('Bot ID:', botId);
 console.log('Sender:', sender);
 console.log('Jumlah Peserta:', participants.length);
 console.log('Bot Admin:', isBotAdmin);
