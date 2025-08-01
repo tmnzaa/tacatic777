@@ -100,13 +100,14 @@ const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
 // Format JID bot agar pasti bener
-const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net';
+const rawBotJid = sock?.user?.id || ''; // Misal: 6281234567890:3@s.whatsapp.net
+const cleanBotJid = rawBotJid.split(':')[0] + '@s.whatsapp.net';
 
-// Cek status admin bot
-const botParticipant = participants.find(p => p.id === botJid);
+// Cari bot sebagai participant (pakai includes biar gak gagal)
+const botParticipant = participants.find(p => p.id.includes(cleanBotJid));
 const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
 
-// Cek status admin pengirim
+// Cari pengirim sebagai participant
 const senderParticipant = participants.find(p => p.id === sender);
 const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
 
@@ -116,6 +117,12 @@ const isBotOwner = OWNER_BOT.includes(sender);
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isOwner = isBotOwner || isGroupOwner;
+
+// Debug (sementara buat lihat)
+console.log('✅ BOT JID:', cleanBotJid);
+console.log('✅ BOT PARTICIPANT:', botParticipant);
+console.log('✅ BOT ADMIN:', isBotAdmin);
+console.log('✅ SENDER ADMIN:', isAdmin);
 
 // (opsional)
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
