@@ -98,27 +98,46 @@ if (!groupMetadata || Date.now() - groupMetadata._cachedAt > 300000) {
   }
 }
 
-// Ambil daftar peserta grup
+/// Ambil daftar peserta grup
 const participants = groupMetadata?.participants || [];
 
-// Format JID bot
-const botIdRaw = sock?.user?.id || '';
-const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw;
+// Format JID bot (hilangkan bagian setelah ':' jika ada)
+const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net';
 
-// Cari data peserta bot dan pengirim
+// Ambil data peserta bot dan pengirim
 const botParticipant = participants.find(p => p.id === botJid);
 const senderParticipant = participants.find(p => p.id === sender);
 
-// Cek status admin
-const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
-const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
+// Cek apakah bot adalah admin grup
+const isBotAdmin = ['admin', 'superadmin'].includes(botParticipant?.admin);
 
-// Cek owner bot dan owner grup
+// Cek apakah pengirim adalah admin grup
+const isAdmin = ['admin', 'superadmin'].includes(senderParticipant?.admin);
+
+// Daftar owner bot (ganti sesuai nomormu)
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 const isBotOwner = OWNER_BOT.includes(sender);
+
+// Cek apakah pengirim adalah owner grup
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
+
+// Gabungan pengecekan apakah dia owner (bot atau grup)
 const isOwner = isBotOwner || isGroupOwner;
+
+// Debug log (opsional, bisa dihapus setelah testing)
+console.log('──── DEBUG ADMIN CHECK ────');
+console.log('Bot JID:', botJid);
+console.log('Sender:', sender);
+console.log('Jumlah Peserta:', participants.length);
+console.log('Bot Participant:', botParticipant);
+console.log('Sender Participant:', senderParticipant);
+console.log('Bot Admin:', isBotAdmin);
+console.log('Sender Admin:', isAdmin);
+console.log('Owner Grup:', groupOwner);
+console.log('Is Bot Owner:', isBotOwner);
+console.log('Is Group Owner:', isGroupOwner);
+console.log('Is Owner:', isOwner);
 
 // (opsional)
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
