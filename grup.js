@@ -119,15 +119,8 @@ const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender); // OWNER_BOT = array of owner number
 const isOwner = isBotOwner || isGroupOwner;
 
-// Log debug untuk bantu cari masalah
-console.log('──────── DEBUG ADMIN CHECK ────────');
-console.log('Bot Raw ID:', rawBotId);
-console.log('Bot Number:', botNumber);
-console.log('Sender:', sender);
-console.log('Participants (jumlah):', participants.length);
-console.log('Bot Info:', botInfo);
-console.log('Bot Admin Status:', botInfo?.admin);
-console.log('───────────────────────────────────');
+// Jika polling (opsional)
+const isPolling = !!msg.message?.pollCreationMessage;
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
