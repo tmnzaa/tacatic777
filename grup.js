@@ -111,7 +111,7 @@ const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
 
 db[from] = db[from] || {};
-db[from].nama = groupMetadata.subject;
+db[from].nama = metadata.subject;
 db[from].dnd = db[from].dnd || false;
 
 const fitur = db[from];
