@@ -100,41 +100,14 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
 ];
 
-// Ambil metadata grup terbaru
-const groupMetadata = await sock.groupMetadata(from);
-const participants = groupMetadata.participants;
-
-// Ambil ID bot
-const fullBotID = sock.user?.id || '';
-const botNumber = sock?.user?.id?.split(':')[0]; // Tanpa @s.whatsapp.net
-const botJid = botNumber + '@s.whatsapp.net';
-
-// Cari info peserta
-const senderInfo = participants.find(p => p.id === sender);
-const botInfo = participants.find(p => p.id === botJid);
-
-// Cek status admin
-const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
-const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
-
-// Cek pemilik grup & pemilik bot
-const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
+const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isGroupOwner || isBotOwner;
+const isOwner = isBotOwner || isGroupOwner;
 
-// // Debug log
-// console.log(`──────── DEBUG ADMIN CHECK ────────`);
-// console.log('Bot Raw ID:', fullBotID);
-// console.log('Bot Number (Cleaned):', botNumber);
-// console.log('Bot JID:', botJid);
-// console.log('Sender:', sender);
-// console.log('Participants (jumlah):', participants.length);
-// console.log('Bot Info:', botInfo);
-// console.log('Bot Admin Status:', isBotAdmin);
-// console.log(`───────────────────────────────────`);
-
-const isPolling = !!msg.message?.pollCreationMessage;
+const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
@@ -165,7 +138,7 @@ global.strikeCache = strikeDB; // update cache biar tetap sinkron
   return;
 }
 
-const botParticipant = metadata.participants.find(p => p.id === botNumber);
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
 
 if (mentions.includes(botNumber) && !isCommand) return;
 
@@ -198,7 +171,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   if (text === '.aktifbotper') {
     if (!isOwner) {
       return sock.sendMessage(from, {
-        text: '❌ Hanya *Owner Bot* yang bisa aktifkan!'
+        text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
        }, { quoted: msg });
     }
     fitur.permanen = true;
