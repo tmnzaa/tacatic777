@@ -97,56 +97,28 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
-// Ambil JID bot langsung dari sock tanpa diubah-ubah
-const botJid = sock?.user?.id;
-
-// Ambil data peserta grup
-const participants = metadata?.participants || [];
-
-// Cari data bot dari participants
-const botData = participants.find(p => p.id === botJid);
-
-// Cek apakah bot adalah admin grup
-const isBotAdmin = ['admin', 'superadmin'].includes(botData?.admin);
-
-// Ambil owner grup (jika tidak ada, ambil yang superadmin)
-const groupOwner = metadata?.owner || participants.find(p => p.admin === 'superadmin')?.id;
-
-// Cek apakah pengirim adalah owner grup
+const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
-
-// Cek apakah pengirim adalah owner bot
 const isBotOwner = OWNER_BOT.includes(sender);
-
-// Gabungan status owner
 const isOwner = isBotOwner || isGroupOwner;
 
-// Cari data sender dari participants
-const senderData = participants.find(p => p.id === sender);
+const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
 
-// Cek apakah pengirim adalah admin
-const isAdmin = ['admin', 'superadmin'].includes(senderData?.admin);
+// GANTI INI: Bot JID asli (tanpa split!)
+const botJid = sock.user.id; // langsung ambil aja tanpa ubah-ubah
 
-// Debugging lengkap
-console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot JID:', botJid);
-console.log('Bot Data:', botData);
-console.log('Bot is Admin?', isBotAdmin);
-console.log('Sender:', sender);
-console.log('Sender Data:', senderData);
-console.log('Sender is Admin?', isAdmin);
-console.log('Group Owner:', groupOwner);
-console.log('Sender is Group Owner?', isGroupOwner);
-console.log('Sender is Bot Owner?', isBotOwner);
-console.log('Sender is Owner?', isOwner);
+// CEK ADMINNYA: benerin di sini
+const isBotAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === botJid)?.admin);
 
+// (opsional)
+const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
 
 db[from] = db[from] || {};
-db[from].nama = metadata.subject;
+db[from].nama = groupMetadata.subject;
 db[from].dnd = db[from].dnd || false;
 
 const fitur = db[from];
