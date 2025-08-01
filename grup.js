@@ -95,34 +95,41 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   }
 }
 
+
 // Ambil metadata grup
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
-// Format JID bot agar pasti bener
-const rawBotJid = sock?.user?.id || ''; // Misal: 6281234567890:3@s.whatsapp.net
-const cleanBotJid = rawBotJid.split(':')[0] + '@s.whatsapp.net';
+// Ambil JID bot
+const fullBotJid = sock?.user?.id || ''; // misalnya: 6281234567890:2@s.whatsapp.net
+const botJid = fullBotJid.split(':')[0] + '@s.whatsapp.net';
 
-// Cari bot sebagai participant (pakai includes biar gak gagal)
-const botParticipant = participants.find(p => p.id.includes(cleanBotJid));
+// DEBUG: cek JID bot
+console.log('✅ Full Bot JID:', fullBotJid);
+console.log('✅ Clean Bot JID:', botJid);
+
+// Cari participant bot di grup (pakai includes biar aman)
+const botParticipant = participants.find(p => p.id.includes(botJid));
 const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
 
-// Cari pengirim sebagai participant
+// Cek pengirim admin
 const senderParticipant = participants.find(p => p.id === sender);
 const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
 
-// Owner info
+// Owner check
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 const isBotOwner = OWNER_BOT.includes(sender);
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isOwner = isBotOwner || isGroupOwner;
 
-// Debug (sementara buat lihat)
-console.log('✅ BOT JID:', cleanBotJid);
-console.log('✅ BOT PARTICIPANT:', botParticipant);
-console.log('✅ BOT ADMIN:', isBotAdmin);
-console.log('✅ SENDER ADMIN:', isAdmin);
+// DEBUG semua info
+console.log('📛 Semua peserta:', participants.map(p => p.id));
+console.log('🤖 Bot Participant:', botParticipant);
+console.log('✅ isBotAdmin:', isBotAdmin);
+console.log('✅ isAdmin:', isAdmin);
+console.log('✅ Sender:', sender);
+
 
 // (opsional)
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
