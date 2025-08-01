@@ -82,77 +82,44 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-// Inisialisasi cache grup kalau belum ada
-if (!global.groupCache) global.groupCache = {};
+  global.groupCache = global.groupCache || {}
+let metadata = global.groupCache[from]
 
-// Ambil metadata grup dari cache atau fetch baru jika lebih dari 5 menit
-let groupMetadata = global.groupCache[from];
-if (!groupMetadata || Date.now() - groupMetadata._cachedAt > 300000) {
+if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
-    groupMetadata = await sock.groupMetadata(from);
-    groupMetadata._cachedAt = Date.now();
-    global.groupCache[from] = groupMetadata;
+    metadata = await sock.groupMetadata(from)
+    metadata._cachedAt = Date.now()
+    global.groupCache[from] = metadata
   } catch (err) {
-    console.log('❌ Gagal ambil metadata grup:', err.message);
-    return; // Stop agar tidak lanjut jika metadata gagal
+    return // jangan spam console
   }
 }
 
-/// Ambil metadata grup
-const participants = groupMetadata?.participants || [];
+ const OWNER_BOT = [
+  '62895379065009@s.whatsapp.net',
+  '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
+];
 
-// Format bot JID agar cocok dengan ID peserta (tanpa ':')
-const rawBotJid = sock?.user?.id || '';
-const botJid = rawBotJid.endsWith('@s.whatsapp.net') ? rawBotJid : rawBotJid.split(':')[0] + '@s.whatsapp.net';
-
-// Cari peserta bot & pengirim
-const botParticipant = participants.find(p => p.id === botJid);
-const senderParticipant = participants.find(p => p.id === sender);
-
-// Cek admin bot dan pengirim
-const isBotAdmin = !!botParticipant?.admin;
-const isAdmin = !!senderParticipant?.admin;
-
-// Daftar owner bot (ubah sesuai nomormu)
-const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
-const isBotOwner = OWNER_BOT.includes(sender);
-
-// Cek owner grup
-const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
+const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
-
-// Gabungan owner
+const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
 
-// Debug bantu cek kenapa gagal (opsional)
-console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot JID:', botJid);
-console.log('Sender:', sender);
-console.log('Bot Admin?', isBotAdmin);
-console.log('Sender Admin?', isAdmin);
-console.log('Group Owner:', groupOwner);
-console.log('Is Owner:', isOwner);
-
-// (opsional)
+const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
-// Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
-
 db[from] = db[from] || {};
-db[from].nama = groupMetadata.subject;
-db[from].dnd = db[from].dnd || false;
-
+db[from].nama = metadata.subject;
 const fitur = db[from];
+db[from].dnd = db[from].dnd || false;
+fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
-fs.writeJsonSync(dbFile, db, { spaces: 2 });
-
-// Cek status aktif bot
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
-// Fitur anti polling
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   await sock.sendMessage(from, { delete: msg.key });
 
@@ -166,21 +133,20 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
     delete strikeDB[from][sender];
   }
 
-  await fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
-  global.strikeCache = strikeDB;
-
+await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
+global.strikeCache = strikeDB; // update cache biar tetap sinkron
   return;
 }
 
-// Abaikan mention ke bot jika bukan command
-if (mentions.includes(botJid) && !isCommand) return;
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
 
-// Perintah aktivasi bot
+if (mentions.includes(botNumber) && !isCommand) return;
+
 if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
       text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
-    }, { quoted: msg });
+     }, { quoted: msg });
   }
 
   if (!isOwner) {
@@ -189,6 +155,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     }, { quoted: msg });
   }
 
+  const now = new Date();
   const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
 
   if (fitur.permanen || (expiredDate && expiredDate >= now)) {
@@ -197,7 +164,6 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     });
   }
 
-  // Set masa aktif sesuai harga
   if (text === '.aktifbot3k') fitur.expired = tambahHari(7);
   if (text === '.aktifbot5k') fitur.expired = tambahHari(30);
   if (text === '.aktifbot7k') fitur.expired = tambahHari(60);
@@ -206,13 +172,13 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     if (!isOwner) {
       return sock.sendMessage(from, {
         text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
-      }, { quoted: msg });
+       }, { quoted: msg });
     }
     fitur.permanen = true;
     fitur.expired = null;
   }
 
-  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
   return sock.sendMessage(from, {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
