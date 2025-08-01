@@ -95,22 +95,21 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   }
 }
 
-
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata.participants || [];
 
-const botId = (sock?.user?.id || '').split(':')[0] + '@s.whatsapp.net';
+// Ganti botId jadi botJid (biar konsisten dengan pemakaian di bawah)
+const botJid = (sock?.user?.id || '').split(':')[0] + '@s.whatsapp.net';
 
 let isBotAdmin = false;
-
 for (const p of participants) {
-  if (p.id === botId || p.id.startsWith(botId)) {
+  if (p.id === botJid || p.id.startsWith(botJid)) {
     isBotAdmin = p.admin === 'admin' || p.admin === 'superadmin';
     break;
   }
 }
 
-console.log('✅ BOT JID:', botId);
+console.log('✅ BOT JID:', botJid);
 console.log('✅ Bot Admin:', isBotAdmin);
 
 // (opsional)
@@ -131,6 +130,16 @@ fs.writeJsonSync(dbFile, db, { spaces: 2 });
 // Cek status aktif bot
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
+
+// Cek owner & admin
+const senderParticipant = participants.find(p => p.id === sender);
+const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
+
+const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
+const isBotOwner = OWNER_BOT.includes(sender);
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
+const isGroupOwner = sender === groupOwner;
+const isOwner = isBotOwner || isGroupOwner;
 
 // Fitur anti polling
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
