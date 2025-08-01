@@ -108,7 +108,7 @@ const botJid = sock.user.id;
 
 // Ambil info peserta
 const senderInfo = participants.find(p => p.id === sender);
-const botInfo = participants.find(p => p.id === botJid);
+const botInfo = participants.find(p => botJid.startsWith(p.id));
 
 // Cek status admin
 const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
