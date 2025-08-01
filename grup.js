@@ -97,20 +97,48 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
-const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
+// Ambil JID bot dengan aman
+const botJid = sock?.user?.id?.includes(':')
+  ? sock.user.id.split(':')[0] + '@s.whatsapp.net'
+  : sock.user.id;
+
+// Ambil data peserta grup
+const participants = metadata?.participants || [];
+
+// Ambil data bot dari daftar peserta
+const botData = participants.find(p => p.id === botJid);
+
+// Cek apakah bot admin
+const isBotAdmin = ['admin', 'superadmin'].includes(botData?.admin);
+
+// Ambil owner grup (jika tidak ada, cari yang superadmin)
+const groupOwner = metadata?.owner || participants.find(p => p.admin === 'superadmin')?.id;
+
+// Cek apakah pengirim adalah owner grup
 const isGroupOwner = sender === groupOwner;
+
+// Cek apakah pengirim adalah owner bot
 const isBotOwner = OWNER_BOT.includes(sender);
+
+// Gabungkan keduanya jadi satu status owner
 const isOwner = isBotOwner || isGroupOwner;
 
-const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
+// Cek apakah pengirim adalah admin
+const senderData = participants.find(p => p.id === sender);
+const isAdmin = ['admin', 'superadmin'].includes(senderData?.admin);
 
-// ✅ FIX JID bot
-const botJid = (sock?.user?.id?.split(':')[0] || '') + '@s.whatsapp.net';
-const isBotAdmin = metadata.participants.find(p => p.id === botJid)?.admin !== undefined;
-
-// Debug
-console.log('DEBUG >> Bot JID:', botJid);
-console.log('DEBUG >> Bot is Admin?', isBotAdmin);
+// Debugging lengkap
+console.log('──── DEBUG ADMIN CHECK ────');
+console.log('Bot JID:', botJid);
+console.log('Bot Data:', botData);
+console.log('Bot is Admin?', isBotAdmin);
+console.log('Sender:', sender);
+console.log('Sender Data:', senderData);
+console.log('Sender is Admin?', isAdmin);
+console.log('Group Owner:', groupOwner);
+console.log('Sender is Group Owner?', isGroupOwner);
+console.log('Sender is Bot Owner?', isBotOwner);
+console.log('Sender is Owner?', isOwner);
 
 
 // Inisialisasi & update database grup
