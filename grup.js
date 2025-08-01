@@ -96,40 +96,22 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 }
 
 
-// Ambil metadata grup
 const groupMetadata = await sock.groupMetadata(from);
-const participants = groupMetadata?.participants || [];
+const participants = groupMetadata.participants || [];
 
-// Ambil JID bot
-const fullBotJid = sock?.user?.id || ''; // misalnya: 6281234567890:2@s.whatsapp.net
-const botJid = fullBotJid.split(':')[0] + '@s.whatsapp.net';
+const botId = (sock?.user?.id || '').split(':')[0] + '@s.whatsapp.net';
 
-// DEBUG: cek JID bot
-console.log('✅ Full Bot JID:', fullBotJid);
-console.log('✅ Clean Bot JID:', botJid);
+let isBotAdmin = false;
 
-// Cari participant bot di grup (pakai includes biar aman)
-const botParticipant = participants.find(p => p.id.includes(botJid));
-const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
+for (const p of participants) {
+  if (p.id === botId || p.id.startsWith(botId)) {
+    isBotAdmin = p.admin === 'admin' || p.admin === 'superadmin';
+    break;
+  }
+}
 
-// Cek pengirim admin
-const senderParticipant = participants.find(p => p.id === sender);
-const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
-
-// Owner check
-const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
-const isBotOwner = OWNER_BOT.includes(sender);
-const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
-const isGroupOwner = sender === groupOwner;
-const isOwner = isBotOwner || isGroupOwner;
-
-// DEBUG semua info
-console.log('📛 Semua peserta:', participants.map(p => p.id));
-console.log('🤖 Bot Participant:', botParticipant);
-console.log('✅ isBotAdmin:', isBotAdmin);
-console.log('✅ isAdmin:', isAdmin);
-console.log('✅ Sender:', sender);
-
+console.log('✅ BOT JID:', botId);
+console.log('✅ Bot Admin:', isBotAdmin);
 
 // (opsional)
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
