@@ -102,11 +102,11 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 // Ambil metadata grup terbaru
 const groupMetadata = await sock.groupMetadata(from);
-const participants = groupMetadata.participants;
+const participants = groupMetadata.participants || [];
 
 // Ambil ID bot
 const fullBotID = sock.user?.id || '';
-const botNumber = sock?.user?.id?.split(':')[0]; // Tanpa @s.whatsapp.net
+const botNumber = fullBotID.split(':')[0]; // Tanpa @s.whatsapp.net
 const botJid = botNumber + '@s.whatsapp.net';
 
 // Cari info peserta
@@ -121,20 +121,10 @@ const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin'
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isGroupOwner || isBotOwner;
+const isOwner = isBotOwner;
 
-// // Debug log
-// console.log(`──────── DEBUG ADMIN CHECK ────────`);
-// console.log('Bot Raw ID:', fullBotID);
-// console.log('Bot Number (Cleaned):', botNumber);
-// console.log('Bot JID:', botJid);
-// console.log('Sender:', sender);
-// console.log('Participants (jumlah):', participants.length);
-// console.log('Bot Info:', botInfo);
-// console.log('Bot Admin Status:', isBotAdmin);
-// console.log(`───────────────────────────────────`);
-
-const isPolling = !!msg.message?.pollCreationMessage;
+// Cek polling
+const isPolling = !!msg?.message?.pollCreationMessage;
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
