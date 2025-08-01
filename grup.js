@@ -97,21 +97,19 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
-// Ambil JID bot dengan aman
-const botJid = sock?.user?.id?.includes(':')
-  ? sock.user.id.split(':')[0] + '@s.whatsapp.net'
-  : sock.user.id;
+// Ambil JID bot langsung dari sock tanpa diubah-ubah
+const botJid = sock?.user?.id;
 
 // Ambil data peserta grup
 const participants = metadata?.participants || [];
 
-// Ambil data bot dari daftar peserta
+// Cari data bot dari participants
 const botData = participants.find(p => p.id === botJid);
 
-// Cek apakah bot admin
+// Cek apakah bot adalah admin grup
 const isBotAdmin = ['admin', 'superadmin'].includes(botData?.admin);
 
-// Ambil owner grup (jika tidak ada, cari yang superadmin)
+// Ambil owner grup (jika tidak ada, ambil yang superadmin)
 const groupOwner = metadata?.owner || participants.find(p => p.admin === 'superadmin')?.id;
 
 // Cek apakah pengirim adalah owner grup
@@ -120,11 +118,13 @@ const isGroupOwner = sender === groupOwner;
 // Cek apakah pengirim adalah owner bot
 const isBotOwner = OWNER_BOT.includes(sender);
 
-// Gabungkan keduanya jadi satu status owner
+// Gabungan status owner
 const isOwner = isBotOwner || isGroupOwner;
 
-// Cek apakah pengirim adalah admin
+// Cari data sender dari participants
 const senderData = participants.find(p => p.id === sender);
+
+// Cek apakah pengirim adalah admin
 const isAdmin = ['admin', 'superadmin'].includes(senderData?.admin);
 
 // Debugging lengkap
