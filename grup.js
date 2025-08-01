@@ -104,12 +104,14 @@ const isOwner = isBotOwner || isGroupOwner;
 
 const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
 
-// Fix JID bot (tanpa split ':')
-const botJid = sock?.user?.id || '';
+// ✅ FIX JID bot
+const botJid = (sock?.user?.id?.split(':')[0] || '') + '@s.whatsapp.net';
 const isBotAdmin = metadata.participants.find(p => p.id === botJid)?.admin !== undefined;
 
+// Debug
 console.log('DEBUG >> Bot JID:', botJid);
 console.log('DEBUG >> Bot is Admin?', isBotAdmin);
+
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
