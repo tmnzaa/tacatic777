@@ -101,16 +101,17 @@ async function startBot() {
     }
   })
 
-  // ✅ Fungsi cek admin
-  async function isAdmin(sock, jid, sender) {
-    try {
-      const metadata = await sock.groupMetadata(jid)
-      const admins = metadata.participants.filter(p => p.admin)
-      return admins.some(p => p.id === sender)
-    } catch {
-      return false
-    }
+  // ✅ Fungsi cek admin (FIX: tangani jika sender tidak ada di participants)
+async function isAdmin(sock, jid, sender) {
+  try {
+    const metadata = await sock.groupMetadata(jid)
+    const participant = metadata.participants.find(p => p.id === sender)
+    return !!participant?.admin
+  } catch (err) {
+    console.error('❌ Gagal cek admin:', err.message)
+    return false
   }
+}
 
   // 📥 Message handler
   sock.ev.on('messages.upsert', async ({ messages }) => {
