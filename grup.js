@@ -109,8 +109,9 @@ const isPolling = !!msg.message?.pollCreationMessage;
 const senderInfo = metadata.participants.find(p => p.id === sender);
 const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
 
-const botNumber = sock.user.id?.split(':')[0] + '@s.whatsapp.net'; // tambahkan domain WA
-const botInfo = metadata.participants.find(p => p.id === botNumber);
+const botNumber = sock.user?.id?.includes('@s.whatsapp.net') ? sock.user.id : sock.user.id?.split(':')[0] + '@s.whatsapp.net';
+const freshMetadata = await sock.groupMetadata(from); // pastikan dapat metadata terbaru
+const botInfo = freshMetadata.participants.find(p => p.id === botNumber);
 const isBotAdmin = ['admin', 'superadmin'].includes(botInfo?.admin);
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
