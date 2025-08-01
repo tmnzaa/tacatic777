@@ -112,7 +112,7 @@ const botNumber = fullBotID.includes(':')
 
 // Cari info peserta
 const senderInfo = participants.find(p => p.id === sender);
-const botInfo = participants.find(p => p.id === botNumber);
+const botInfo = groupMetadata.participants.find(p => p.id.includes(botNumber.split('@')[0]))
 
 // Status admin
 const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
