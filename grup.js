@@ -97,30 +97,14 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
-// Format nomor bot yang bener
-const botNumber = sock?.user?.id?.split(':')[0] || '';
-const botJid = botNumber + '@s.whatsapp.net';
-
-// Cari botInfo dengan JID yang pas
-const botInfo = participants.find(p => p.id === botJid);
-
-// Cari senderInfo
-const senderInfo = participants.find(p => p.id === sender);
-
-// Cek admin status
-const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
-const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
-
-// Owner grup & bot
-const groupOwner = groupMetadata?.owner || participants.find(p => p.admin === 'superadmin')?.id || '';
+const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
 
-console.log('Bot JID:', botJid);
-console.log('Bot Info:', botInfo);
-console.log('Bot Admin:', isBotAdmin);
-console.log('Participants (bot):', participants.find(p => p.id === botJid));
+const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
