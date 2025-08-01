@@ -134,6 +134,7 @@ console.log('Bot Info:', botInfo);
 console.log('Bot Admin Status:', isBotAdmin);
 console.log(`───────────────────────────────────`);
 
+const isPolling = !!msg.message?.pollCreationMessage;
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
