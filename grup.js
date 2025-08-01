@@ -102,10 +102,10 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 // Ambil metadata grup terbaru
 const groupMetadata = await sock.groupMetadata(from);
-const participants = groupMetadata.participants || [];
+const participants = groupMetadata?.participants || [];
 
-// Ambil ID bot lengkap
-const botJid = sock.user.id; // ID bot sudah dalam format lengkap (misalnya: 628xxx@s.whatsapp.net)
+// Ambil ID bot lengkap (harus aman)
+const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net'; // Format: 628xxx@s.whatsapp.net
 
 // Cari info peserta
 const senderInfo = participants.find(p => p.id === sender);
@@ -118,11 +118,22 @@ const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin'
 // Cek pemilik grup & pemilik bot
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
-const isBotOwner = OWNER_BOT.includes(sender);
+const isBotOwner = Array.isArray(OWNER_BOT) ? OWNER_BOT.includes(sender) : sender === OWNER_BOT;
 const isOwner = isGroupOwner || isBotOwner;
 
 // Cek apakah pesan polling
 const isPolling = !!msg.message?.pollCreationMessage;
+
+// Debug log (optional)
+console.log('──── DEBUG ADMIN CHECK ────');
+console.log('Bot JID:', botJid);
+console.log('Sender:', sender);
+console.log('Jumlah Peserta:', participants.length);
+console.log('Bot Admin:', isBotAdmin);
+console.log('Sender Admin:', isAdmin);
+console.log('Owner Group:', groupOwner);
+console.log('Sender Owner:', isOwner);
+console.log('────────────────────────────');
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
