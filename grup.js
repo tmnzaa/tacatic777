@@ -102,23 +102,21 @@ const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
 // ✅ Format JID bot agar konsisten
-const botJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net'; // <- Lebih aman dari sock.user.id langsung
+const botJid = (sock.user?.id || '').split(':')[0] + '@s.whatsapp.net';
 
-// ✅ Cek apakah sender adalah pemilik grup
-const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
-const isGroupOwner = sender === groupOwner;
-
-// ✅ Cek apakah sender adalah owner bot
-const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isBotOwner || isGroupOwner;
-
-// ✅ Cek apakah pengirim admin
+// ✅ Cari data pengirim dan bot di list partisipan
 const senderData = participants.find(p => p.id === sender);
-const isAdmin = ['admin', 'superadmin'].includes(senderData?.admin);
-
-// ✅ Cek apakah BOT adalah admin
 const botData = participants.find(p => p.id === botJid);
+
+// ✅ Cek status admin
+const isAdmin = ['admin', 'superadmin'].includes(senderData?.admin);
 const isBotAdmin = ['admin', 'superadmin'].includes(botData?.admin);
+
+// ✅ Cek apakah sender adalah owner bot atau owner grup
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
+const isBotOwner = OWNER_BOT.includes(sender);
+const isGroupOwner = sender === groupOwner;
+const isOwner = isBotOwner || isGroupOwner;
 
 // (opsional)
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
