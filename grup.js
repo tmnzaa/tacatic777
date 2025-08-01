@@ -102,8 +102,8 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
-const botJid = sock.user.id.split(':')[0] + '@s.whatsapp.net'; // FIX JID BOT
-const botInfo = participants.find(p => p.id === botJid);
+const realBotJid = sock.user.id?.split(':')[0] + '@s.whatsapp.net'; // Pastikan formatnya bener
+const botInfo = participants.find(p => p.id?.includes(realBotJid)); // Gunakan includes untuk jaga-jaga
 
 const senderInfo = participants.find(p => p.id === sender);
 
@@ -112,11 +112,12 @@ const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin'
 
 const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
+
 const isBotOwner = Array.isArray(OWNER_BOT) ? OWNER_BOT.includes(sender) : sender === OWNER_BOT;
 const isOwner = isGroupOwner || isBotOwner;
 
 console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot JID:', sock.user.id, '\tBot Formatted:', botJid);
+console.log('Bot JID:', sock.user.id, '\tBot Formatted:', realBotJid);
 console.log('Sender:', sender);
 console.log('Jumlah Peserta:', participants.length);
 console.log('Bot Admin:', isBotAdmin);
