@@ -101,35 +101,33 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 ];
 
 // Ambil metadata grup terbaru
-const freshMetadata = await sock.groupMetadata(from);
-const participants = freshMetadata.participants;
+const freshMetadata = await sock.groupMetadata(from); // from = id grup
+const participants = freshMetadata.participants || [];
 
-const botNumber = sock.user?.id?.includes('@s.whatsapp.net') 
-  ? sock.user.id 
-  : sock.user.id?.split(':')[0] + '@s.whatsapp.net';
+const rawBotId = sock.user?.id || ''; // contoh: 6285179690350:12@s.whatsapp.net
+const botNumber = rawBotId.includes(':') ? rawBotId.split(':')[0] + '@s.whatsapp.net' : rawBotId;
 
 const senderInfo = participants.find(p => p.id === sender);
 const botInfo = participants.find(p => p.id === botNumber);
 
-// Log tambahan
-console.log('Bot Number:', botNumber);
-console.log('Sender:', sender);
-console.log('Participants (jumlah):', participants.length);
-console.log('Bot Info:', botInfo);
-console.log('Bot Admin Status:', botInfo?.admin);
-
-// Status admin
 const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
 const isBotAdmin = ['admin', 'superadmin'].includes(botInfo?.admin);
 
 // Cek pemilik grup & pemilik bot
 const groupOwner = freshMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
-const isBotOwner = OWNER_BOT.includes(sender);
+const isBotOwner = OWNER_BOT.includes(sender); // OWNER_BOT = array of owner number
 const isOwner = isBotOwner || isGroupOwner;
 
-// Jika polling (opsional)
-const isPolling = !!msg.message?.pollCreationMessage;
+// Log debug untuk bantu cari masalah
+console.log('──────── DEBUG ADMIN CHECK ────────');
+console.log('Bot Raw ID:', rawBotId);
+console.log('Bot Number:', botNumber);
+console.log('Sender:', sender);
+console.log('Participants (jumlah):', participants.length);
+console.log('Bot Info:', botInfo);
+console.log('Bot Admin Status:', botInfo?.admin);
+console.log('───────────────────────────────────');
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
