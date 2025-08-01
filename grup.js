@@ -95,14 +95,14 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
     metadata._cachedAt = Date.now();
     global.groupCache[from] = metadata;
   } catch (err) {
-    return; // Jangan spam console kalau gagal ambil metadata
+    return; // Jangan spam console
   }
 }
 
 // Ambil peserta grup
 const participants = metadata?.participants || [];
 
-// Format JID bot (safe untuk semua versi Baileys)
+// Format JID bot
 const botIdRaw = sock?.user?.id || '';
 const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw;
 
@@ -110,28 +110,16 @@ const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.ne
 const botParticipant = participants.find(p => p.id === botJid);
 const senderParticipant = participants.find(p => p.id === sender);
 
-// Cek status admin bot
+// Cek status admin bot & pengirim
 const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
-
-// Cek status admin pengirim
 const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
 
-// Cek owner (bot & grup)
+// Cek owner
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 const isBotOwner = OWNER_BOT.includes(sender);
 const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isOwner = isBotOwner || isGroupOwner;
-
-// Debug log opsional (hapus kalau udah jalan)
-console.log('──── DEBUG ADMIN CHECK ────');
-console.log('Bot JID:', botJid);
-console.log('Bot Admin:', isBotAdmin);
-console.log('Sender Admin:', isAdmin);
-console.log('Group Owner:', groupOwner);
-console.log('Sender Owner:', isGroupOwner);
-console.log('Is Owner (Bot or Group):', isOwner);
-
 
 // (opsional)
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
