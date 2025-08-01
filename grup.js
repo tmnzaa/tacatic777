@@ -100,26 +100,44 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
 ];
 
-const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
+// Ambil data grup dan peserta
+const groupMetadata = metadata; // alias biar konsisten
+const participants = groupMetadata.participants || [];
+
+// Bot info
+const fullBotID = sock.user?.id || '';
+const botNumber = fullBotID.split(':')[0] + '@s.whatsapp.net';
+
+// Pemilik dan status
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isBotOwner || isGroupOwner;
+const isOwner = isGroupOwner || isBotOwner;
 
-const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+// Cek status admin
+const senderAdminStatus = participants.find(p => p.id === sender)?.admin;
+const isAdmin = ['admin', 'superadmin'].includes(senderAdminStatus);
+
+const botAdminStatus = participants.find(p => p.id === botNumber)?.admin;
+const isBotAdmin = ['admin', 'superadmin'].includes(botAdminStatus);
+
+// Cek polling
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
+// Database
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
 db[from] = db[from] || {};
-db[from].nama = metadata.subject;
+db[from].nama = groupMetadata.subject;
 const fitur = db[from];
 db[from].dnd = db[from].dnd || false;
-fs.writeJsonSync(dbFile, db, { spaces: 2 })
+fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
+// Cek status aktif
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
+// Fitur anti polling
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   await sock.sendMessage(from, { delete: msg.key });
 
@@ -133,20 +151,20 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
     delete strikeDB[from][sender];
   }
 
-await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
-global.strikeCache = strikeDB; // update cache biar tetap sinkron
+  await fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+  global.strikeCache = strikeDB;
   return;
 }
 
-const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
-
+// Jika bot disebut tapi bukan command, jangan balas
 if (mentions.includes(botNumber) && !isCommand) return;
 
+// Aktivasi bot
 if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
       text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
-     }, { quoted: msg });
+    }, { quoted: msg });
   }
 
   if (!isOwner) {
@@ -155,9 +173,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     }, { quoted: msg });
   }
 
-  const now = new Date();
   const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
-
   if (fitur.permanen || (expiredDate && expiredDate >= now)) {
     return sock.sendMessage(from, {
       text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
@@ -172,18 +188,19 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     if (!isOwner) {
       return sock.sendMessage(from, {
         text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
-       }, { quoted: msg });
+      }, { quoted: msg });
     }
     fitur.permanen = true;
     fitur.expired = null;
   }
 
-fs.writeJsonSync(dbFile, db, { spaces: 2 })
+  fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
   return sock.sendMessage(from, {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
   }, { quoted: msg });
 }
+
 
 const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2', '.hdv2',];
   const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif', '.hapus'];
