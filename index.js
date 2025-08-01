@@ -101,16 +101,16 @@ async function startBot() {
     }
   })
 
-  async function isAdmin(sock, jid, userJid) {
-  try {
-    const metadata = await sock.groupMetadata(jid)
-    const formattedJid = formatJid(userJid)
-    const admins = metadata.participants.filter(p => p.admin)
-    return admins.some(p => p.id === formattedJid)
-  } catch {
-    return false
+  // ✅ Fungsi cek admin
+  async function isAdmin(sock, jid, sender) {
+    try {
+      const metadata = await sock.groupMetadata(jid)
+      const admins = metadata.participants.filter(p => p.admin)
+      return admins.some(p => p.id === sender)
+    } catch {
+      return false
+    }
   }
-}
 
   // 📥 Message handler
   sock.ev.on('messages.upsert', async ({ messages }) => {
@@ -184,8 +184,8 @@ async function startBot() {
 
     // Handler lain
     try {
-      if (!global.handleGrup) global.handleGrup = require('./grup')
-      if (!global.handlePrivate) global.handlePrivate = require('./private')
+if (!global.handleGrup) global.handleGrup = (await import('./grup.js')).default
+global.handlePrivate = (await import('./private.js')).default
 
       global.handleGrup(sock, msg)
       global.handlePrivate(sock, msg)
