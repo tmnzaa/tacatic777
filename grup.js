@@ -108,7 +108,8 @@ const botJid = sock.user.id;
 
 // Ambil info peserta
 const senderInfo = participants.find(p => p.id === sender);
-const botInfo = participants.find(p => botJid.startsWith(p.id));
+const cleanBotJid = botJid.split(':')[0]; // Hilangkan suffix ":2" jika ada
+const botInfo = participants.find(p => p.id === cleanBotJid);
 
 // Cek status admin
 const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
