@@ -97,39 +97,30 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 
 const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 
-const groupMetadata = await sock.groupMetadata(from)
-const participants = groupMetadata?.participants || []
+// Format nomor bot yang bener
+const botNumber = sock?.user?.id?.split(':')[0] || '';
+const botJid = botNumber + '@s.whatsapp.net';
 
-// Cek ID bot yang benar-benar cocok
-const botNumber = sock?.user?.id?.split(':')[0] || ''
-const botJid = botNumber.endsWith('@s.whatsapp.net') ? botNumber : botNumber + '@s.whatsapp.net'
+// Cari botInfo dengan JID yang pas
+const botInfo = participants.find(p => p.id === botJid);
 
-// Ambil info peserta bot dan pengirim
-const botInfo = participants.find(p => p.id.includes(botNumber))
-const senderInfo = participants.find(p => p.id === sender)
+// Cari senderInfo
+const senderInfo = participants.find(p => p.id === sender);
 
-// Cek apakah admin
-const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin'
-const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin'
+// Cek admin status
+const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
+const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
 
-// Cek owner grup
-const groupOwner = groupMetadata?.owner || participants.find(p => p.admin === 'superadmin')?.id || ''
-const isGroupOwner = sender === groupOwner
-const isBotOwner = OWNER_BOT.includes(sender)
-const isOwner = isGroupOwner || isBotOwner
+// Owner grup & bot
+const groupOwner = groupMetadata?.owner || participants.find(p => p.admin === 'superadmin')?.id || '';
+const isGroupOwner = sender === groupOwner;
+const isBotOwner = OWNER_BOT.includes(sender);
+const isOwner = isBotOwner || isGroupOwner;
 
-// Debug log
-console.log('──── DEBUG ADMIN CHECK ────')
-console.log('Bot JID:', botJid)
-console.log('Bot Number:', botNumber)
-console.log('Sender:', sender)
-console.log('Jumlah Peserta:', participants.length)
-console.log('Bot Admin:', isBotAdmin)
-console.log('Sender Admin:', isAdmin)
-console.log('Group Owner:', groupOwner)
-console.log('Sender Owner:', isOwner)
-console.log('────────────────────────────')
-
+console.log('Bot JID:', botJid);
+console.log('Bot Info:', botInfo);
+console.log('Bot Admin:', isBotAdmin);
+console.log('Participants (bot):', participants.find(p => p.id === botJid));
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
