@@ -128,12 +128,13 @@ const isOwner = isBotOwner || isGroupOwner;
 // DEBUG LOG
 console.log('──── DEBUG ADMIN CHECK ────');
 console.log('Bot Raw ID:', botIdRaw);
-console.log('Possible JIDs:', [botJid1, botJid2, botJid3]);
+console.log('Possible Bot JIDs:', [botJid1, botJid2, botJid3]);
 console.log('Bot Admin:', isBotAdmin);
 console.log('Sender Admin:', isAdmin);
 console.log('Group Owner:', groupOwner);
 console.log('Sender Owner:', isOwner);
 console.log('────────────────────────────');
+
 
 // Inisialisasi & update database grup
 const db = global.dbCache || fs.readJsonSync(dbFile);
