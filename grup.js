@@ -100,29 +100,33 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
 ];
 
-// Ambil data grup dan peserta
-const groupMetadata = metadata; // alias biar konsisten
-const participants = groupMetadata.participants || [];
+// Ambil metadata grup
+const groupMetadata = await sock.groupMetadata(from);
+const participants = groupMetadata?.participants || [];
 
-// Bot info
-const fullBotID = sock.user?.id || '';
-const botNumber = fullBotID.split(':')[0] + '@s.whatsapp.net';
+// ID bot & pengirim
+const fullBotID = sock?.user?.id || ''; // Contoh: 6285179690350:12@s.whatsapp.net
+const botNumber = fullBotID.split(':')[0]; // Ambil 6285179690350
+const botJid = botNumber + '@s.whatsapp.net'; // Jadikan full JID
 
-// Pemilik dan status
-const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
-const isGroupOwner = sender === groupOwner;
-const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isGroupOwner || isBotOwner;
+// Ambil info peserta & bot dari grup
+const senderInfo = participants.find(p => p.id === sender);
+const botInfo = participants.find(p => p.id === botJid);
 
 // Cek status admin
-const senderAdminStatus = participants.find(p => p.id === sender)?.admin;
-const isAdmin = ['admin', 'superadmin'].includes(senderAdminStatus);
+const isAdmin = senderInfo?.admin === 'admin' || senderInfo?.admin === 'superadmin';
+const isBotAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin';
 
-const botAdminStatus = participants.find(p => p.id === botNumber)?.admin;
-const isBotAdmin = ['admin', 'superadmin'].includes(botAdminStatus);
+// Cek owner grup
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
+const isGroupOwner = sender === groupOwner;
+
+// Cek pemilik bot
+const isBotOwner = OWNER_BOT?.includes(sender); // OWNER_BOT harus array berisi ID
+const isOwner = isBotOwner || isGroupOwner;
 
 // Cek polling
-const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
+const isPolling = !!msg?.message?.pollCreationMessage;
 
 // Database
 const db = global.dbCache || fs.readJsonSync(dbFile);
