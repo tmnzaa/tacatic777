@@ -100,19 +100,32 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
 ];
 
-const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
+// Ambil metadata grup terbaru
+const freshMetadata = await sock.groupMetadata(from); // 'from' adalah ID grup
+const participants = freshMetadata.participants;
+
+// Ambil ID bot (pastikan bentuknya @s.whatsapp.net)
+const rawBotId = sock?.user?.id;
+const botNumber = rawBotId?.includes('@s.whatsapp.net')
+  ? rawBotId
+  : rawBotId?.split(':')[0] + '@s.whatsapp.net';
+
+// Ambil info sender & bot dari peserta grup
+const senderInfo = participants.find(p => p.id === sender);
+const botInfo = participants.find(p => p.id === botNumber);
+
+// Cek apakah pengirim & bot adalah admin
+const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
+const isBotAdmin = ['admin', 'superadmin'].includes(botInfo?.admin);
+
+// Cek apakah pengirim adalah owner grup atau pemilik bot
+const groupOwner = freshMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
+
+// Cek apakah ini pesan polling
 const isPolling = !!msg.message?.pollCreationMessage;
-
-const senderInfo = metadata.participants.find(p => p.id === sender);
-const isAdmin = ['admin', 'superadmin'].includes(senderInfo?.admin);
-
-const botNumber = sock.user?.id?.includes('@s.whatsapp.net') ? sock.user.id : sock.user.id?.split(':')[0] + '@s.whatsapp.net';
-const freshMetadata = await sock.groupMetadata(from); // pastikan dapat metadata terbaru
-const botInfo = freshMetadata.participants.find(p => p.id === botNumber);
-const isBotAdmin = ['admin', 'superadmin'].includes(botInfo?.admin);
 
 const db = global.dbCache || fs.readJsonSync(dbFile);
 global.dbCache = db;
