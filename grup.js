@@ -94,20 +94,21 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
     return // jangan spam console
   }
 }
+
 // Ambil metadata grup
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
-// Ambil JID bot (tanpa tambahan @s.whatsapp.net, karena sudah ada di participants)
-const botJid = (sock?.user?.id || '').split(':')[0] + '@s.whatsapp.net';
+// Ambil base JID bot (tanpa ':xxx' dan tanpa @s.whatsapp.net)
+const botJidBase = (sock?.user?.id || '').split(':')[0]; // hasil: 628xxx
 
-// Cek apakah bot adalah admin di grup
-const isBotAdmin = participants.some(p =>
-  p.id === botJid && ['admin', 'superadmin'].includes(p.admin)
-);
+// Cari peserta yang JID-nya dimulai dengan botJidBase
+const botParticipant = participants.find(p => p.id?.startsWith(botJidBase));
+const isBotAdmin = ['admin', 'superadmin'].includes(botParticipant?.admin);
 
 // Debug log
-console.log('✅ BOT JID:', botJid);
+console.log('✅ BOT JID BASE:', botJidBase);
+console.log('✅ BOT FULL PARTICIPANT:', botParticipant?.id);
 console.log('✅ Bot Admin:', isBotAdmin);
 
 // Simpan metadata grup ke DB
