@@ -95,26 +95,25 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   }
 }
 
-const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
-
-// ✅ Ambil metadata grup secara aman
+// Ambil metadata grup
 const groupMetadata = await sock.groupMetadata(from);
 const participants = groupMetadata?.participants || [];
 
-// ✅ Format JID bot agar konsisten
-const botJid = (sock.user?.id || '').split(':')[0] + '@s.whatsapp.net';
+// Format JID bot agar pasti bener
+const botJid = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net';
 
-// ✅ Cari data pengirim dan bot di list partisipan
-const senderData = participants.find(p => p.id === sender);
-const botData = participants.find(p => p.id === botJid);
+// Cek status admin bot
+const botParticipant = participants.find(p => p.id === botJid);
+const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
 
-// ✅ Cek status admin
-const isAdmin = ['admin', 'superadmin'].includes(senderData?.admin);
-const isBotAdmin = ['admin', 'superadmin'].includes(botData?.admin);
+// Cek status admin pengirim
+const senderParticipant = participants.find(p => p.id === sender);
+const isAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
 
-// ✅ Cek apakah sender adalah owner bot atau owner grup
-const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
+// Owner info
+const OWNER_BOT = ['6282333014459@s.whatsapp.net'];
 const isBotOwner = OWNER_BOT.includes(sender);
+const groupOwner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isOwner = isBotOwner || isGroupOwner;
 
