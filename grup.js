@@ -123,16 +123,16 @@ const isGroupOwner = sender === groupOwner;
 const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isGroupOwner || isBotOwner;
 
-// Debug log
-console.log(`──────── DEBUG ADMIN CHECK ────────`);
-console.log('Bot Raw ID:', fullBotID);
-console.log('Bot Number (Cleaned):', botNumber);
-console.log('Bot JID:', botJid);
-console.log('Sender:', sender);
-console.log('Participants (jumlah):', participants.length);
-console.log('Bot Info:', botInfo);
-console.log('Bot Admin Status:', isBotAdmin);
-console.log(`───────────────────────────────────`);
+// // Debug log
+// console.log(`──────── DEBUG ADMIN CHECK ────────`);
+// console.log('Bot Raw ID:', fullBotID);
+// console.log('Bot Number (Cleaned):', botNumber);
+// console.log('Bot JID:', botJid);
+// console.log('Sender:', sender);
+// console.log('Participants (jumlah):', participants.length);
+// console.log('Bot Info:', botInfo);
+// console.log('Bot Admin Status:', isBotAdmin);
+// console.log(`───────────────────────────────────`);
 
 const isPolling = !!msg.message?.pollCreationMessage;
 
