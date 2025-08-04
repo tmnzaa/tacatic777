@@ -82,7 +82,7 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-// 🛠 Ambil metadata dan cache
+// 🛠 Perbaikan pengambilan metadata & pengecekan admin bot
 global.groupCache = global.groupCache || {}
 
 let metadata = global.groupCache[from]
@@ -94,42 +94,37 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
     global.groupCache[from] = metadata
   } catch (err) {
     console.error('❌ Gagal ambil metadata:', err.message)
-    return
+    return // jangan spam
   }
 }
 
-// ✅ Format JID bot dengan benar
-const botIdRaw = sock?.user?.id || ''
-const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw
+// ✅ Perbaikan format botNumber agar cocok dengan ID di participants
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
 
-// 🧑‍🤝‍🧑 Peserta grup
+// ✅ Dapatkan peserta grup
 const participants = metadata.participants || []
-
-// 🔍 Cek apakah bot admin
-const botParticipant = participants.find(p => p.id === botJid)
-const botRole = botParticipant?.admin || null
-const isBotAdmin = botRole !== null
 
 // 🔐 Daftar owner bot
 const OWNER_BOT = ['6282333014459@s.whatsapp.net']
 
-// 📌 Cek owner grup
+// 🧠 Cek owner grup dan status pemilik
 const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 const isGroupOwner = sender === groupOwner
 const isBotOwner = OWNER_BOT.includes(sender)
 const isOwner = isBotOwner || isGroupOwner
 
-// 🧑‍💼 Cek apakah pengirim adalah admin
+// 🧑‍💼 Cek apakah pengirim admin
 const senderRole = participants.find(p => p.id === sender)?.admin
 const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
-// 🐞 Debug log
-console.log('📛 BOT:', botJid)
-console.log('👥 BOT PARTICIPANT:', botParticipant)
+// 🤖 Cek apakah bot adalah admin
+const botRole = participants.find(p => p.id === botNumber)?.admin
+const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
+
+// 🔍 Debug log
+console.log('📛 BOT:', botNumber)
 console.log('🔍 BOT ROLE:', botRole)
 console.log('✅ isBotAdmin:', isBotAdmin)
-console.log('🧑‍💼 isAdmin:', isAdmin)
-console.log('👑 isOwner:', isOwner)
 
 
 // Deteksi polling & baca DB
