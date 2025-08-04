@@ -82,57 +82,51 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-
-// 🛠 Inisialisasi Cache Metadata Grup
+  
+// grup.js
 global.groupCache = global.groupCache || {}
 
-try {
-  // 📦 Ambil metadata grup dari cache jika masih valid (5 menit)
+async function checkGroupInfo(sock, from, sender) {
   let metadata = global.groupCache[from]
-  const cacheValid = metadata && (Date.now() - metadata._cachedAt < 5 * 60 * 1000)
 
-  if (!cacheValid) {
-    metadata = await sock.groupMetadata(from)
-    metadata._cachedAt = Date.now()
-    global.groupCache[from] = metadata
+  // Ambil ulang metadata jika belum ada atau sudah kadaluarsa
+  if (!metadata || Date.now() - metadata._cachedAt > 5 * 60 * 1000) {
+    try {
+      metadata = await sock.groupMetadata(from)
+      metadata._cachedAt = Date.now()
+      global.groupCache[from] = metadata
+    } catch (err) {
+      console.error('❌ Gagal ambil metadata grup:', err.message)
+      return { error: true }
+    }
   }
 
-  // 🧍 Daftar peserta grup
   const participants = metadata.participants || []
-
-  // 🆔 ID bot dalam format partisipan grup
-  const botNumber = (sock.user.id || '').split(':')[0] + '@s.whatsapp.net'
-
-  // 🧑‍💼 Daftar owner bot (bisa lebih dari satu)
+  const botNumber = (sock?.user?.id || '').split(':')[0] + '@s.whatsapp.net'
   const OWNER_BOT = ['6282333014459@s.whatsapp.net']
 
-  // 🔐 Cek apakah pengirim adalah owner grup atau owner bot
   const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
   const isGroupOwner = sender === groupOwner
   const isBotOwner = OWNER_BOT.includes(sender)
-  const isOwner = isGroupOwner || isBotOwner
+  const isOwner = isBotOwner || isGroupOwner
 
-  // 🧠 Cek apakah pengirim adalah admin grup
-  const senderRole = participants.find(p => p.id === sender)?.admin || null
+  const senderRole = participants.find(p => p.id === sender)?.admin
   const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
-  // 🤖 Cek apakah bot adalah admin grup
-  const botRole = participants.find(p => p.id === botNumber)?.admin || null
+  const botRole = participants.find(p => p.id === botNumber)?.admin
   const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
 
-  // 📋 Debug Info (hapus kalau sudah tidak perlu)
-  console.log('📛 BOT JID:', botNumber)
-  console.log('🔍 BOT ROLE:', botRole)
-  console.log('✅ isBotAdmin:', isBotAdmin)
-  console.log('✅ isAdmin:', isAdmin)
-  console.log('✅ isOwner:', isOwner)
-
-  // ✅ Lanjutkan proses selanjutnya...
-} catch (err) {
-  console.error('❌ Gagal mengambil metadata grup:', err)
-  return // Hentikan proses jika metadata gagal diambil
+  return {
+    metadata,
+    participants,
+    isAdmin,
+    isBotAdmin,
+    isOwner,
+    botNumber
+  }
 }
 
+module.exports = checkGroupInfo
 
 
 // Deteksi polling & baca DB
