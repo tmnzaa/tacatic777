@@ -84,8 +84,14 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
 
 global.groupCache = global.groupCache || {}
 
-async function getGroupMetadata(from) {
+async function getGroupMetadata(from, force = false) {
   try {
+    // Jika ada cache dan tidak diminta refresh, pakai cache
+    if (!force && global.groupCache[from] && (Date.now() - global.groupCache[from]._cachedAt < 300000)) {
+      return global.groupCache[from]
+    }
+
+    // Ambil metadata terbaru
     const metadata = await sock.groupMetadata(from)
     metadata._cachedAt = Date.now()
     global.groupCache[from] = metadata
@@ -96,20 +102,9 @@ async function getGroupMetadata(from) {
   }
 }
 
-let metadata = global.groupCache[from]
-
-// 🔄 Ambil ulang metadata jika:
-// - belum ada cache
-// - cache sudah lebih dari 5 menit
-// - atau bot tidak terdeteksi admin (agar selalu akurat untuk grup baru)
-if (
-  !metadata || 
-  Date.now() - metadata._cachedAt > 300000 ||
-  !metadata.participants.find(p => p.id === (sock.user.id.split(':')[0] + '@s.whatsapp.net'))
-) {
-  metadata = await getGroupMetadata(from)
-  if (!metadata) return
-}
+// 🆕 Ambil metadata awal (force refresh untuk grup baru)
+let metadata = await getGroupMetadata(from, true)
+if (!metadata) return
 
 // ✅ Format bot number
 const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
