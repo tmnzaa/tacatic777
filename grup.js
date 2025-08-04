@@ -82,34 +82,26 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
+// 🛠 Perbaikan pengambilan metadata & pengecekan admin bot
 global.groupCache = global.groupCache || {}
 
-async function getGroupMetadata(from, force = false) {
-  try {
-    // Jika ada cache dan tidak diminta refresh, pakai cache
-    if (!force && global.groupCache[from] && (Date.now() - global.groupCache[from]._cachedAt < 300000)) {
-      return global.groupCache[from]
-    }
+let metadata = global.groupCache[from]
 
-    // Ambil metadata terbaru
-    const metadata = await sock.groupMetadata(from)
+if (!metadata || Date.now() - metadata._cachedAt > 300000) {
+  try {
+    metadata = await sock.groupMetadata(from)
     metadata._cachedAt = Date.now()
     global.groupCache[from] = metadata
-    return metadata
   } catch (err) {
     console.error('❌ Gagal ambil metadata:', err.message)
-    return null
+    return // jangan spam
   }
 }
 
-// 🆕 Ambil metadata awal (force refresh untuk grup baru)
-let metadata = await getGroupMetadata(from, true)
-if (!metadata) return
-
-// ✅ Format bot number
+// ✅ Perbaikan format botNumber agar cocok dengan ID di participants
 const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
 
-// ✅ Peserta grup
+// ✅ Dapatkan peserta grup
 const participants = metadata.participants || []
 
 // 🔐 Daftar owner bot
@@ -133,6 +125,7 @@ const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
 console.log('📛 BOT:', botNumber)
 console.log('🔍 BOT ROLE:', botRole)
 console.log('✅ isBotAdmin:', isBotAdmin)
+
 
 // Deteksi polling & baca DB
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage')
