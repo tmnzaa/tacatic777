@@ -82,55 +82,52 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-// 🛠 Inisialisasi cache metadata
+// 🛠 Ambil metadata dan cache
 global.groupCache = global.groupCache || {}
 
 let metadata = global.groupCache[from]
 
-if (!metadata || Date.now() - metadata._cachedAt > 5 * 60 * 1000) { // 5 menit
+if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
     metadata = await sock.groupMetadata(from)
     metadata._cachedAt = Date.now()
     global.groupCache[from] = metadata
   } catch (err) {
-    console.error('❌ Gagal ambil metadata grup:', err.message)
-    return // hindari spam error
+    console.error('❌ Gagal ambil metadata:', err.message)
+    return
   }
 }
 
-// ✅ Ambil ID bot dalam format yang sesuai
-const botNumber = (sock.user.id || '').split(':')[0] + '@s.whatsapp.net'
+// ✅ Format JID bot dengan benar
+const botIdRaw = sock?.user?.id || ''
+const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw
 
-// ✅ Ambil data peserta grup
+// 🧑‍🤝‍🧑 Peserta
 const participants = metadata.participants || []
+
+// 🔍 Data peserta bot
+const botParticipant = participants.find(p => p.id === botJid)
+const botRole = botParticipant?.admin || null
+const isBotAdmin = botRole !== null
 
 // 🔐 Daftar owner bot
 const OWNER_BOT = ['6282333014459@s.whatsapp.net']
 
-// 🧠 Cek siapa owner grup
+// 📌 Owner grup
 const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 const isGroupOwner = sender === groupOwner
 const isBotOwner = OWNER_BOT.includes(sender)
 const isOwner = isBotOwner || isGroupOwner
 
-// 🧑‍💼 Cek apakah pengirim adalah admin grup
-const senderData = participants.find(p => p.id === sender)
-const senderRole = senderData?.admin || null
-const isAdmin = senderRole === 'admin' || senderRole === 'superadmin'
+// 🧑‍💼 Cek admin pengirim
+const senderRole = participants.find(p => p.id === sender)?.admin
+const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
-// 🤖 Cek apakah bot adalah admin
-const botData = participants.find(p => p.id === botNumber)
-const botRole = botData?.admin || null
-const isBotAdmin = botRole === 'admin' || botRole === 'superadmin'
-
-// 📟 Log debug untuk keperluan pengecekan
-console.log('📛 BOT JID      :', botNumber)
-console.log('👤 SENDER JID   :', sender)
-console.log('🧑‍💼 SENDER ROLE :', senderRole)
-console.log('🤖 BOT ROLE     :', botRole)
-console.log('✅ isAdmin      :', isAdmin)
-console.log('✅ isBotAdmin   :', isBotAdmin)
-console.log('✅ isOwner      :', isOwner)
+// 🔍 Debug log
+console.log('📛 BOT:', botJid)
+console.log('👥 BOT PARTICIPANT:', botParticipant)
+console.log('🔍 BOT ROLE:', botRole)
+console.log('✅ isBotAdmin:', isBotAdmin)
 
 
 // Deteksi polling & baca DB
