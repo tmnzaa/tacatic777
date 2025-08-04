@@ -82,40 +82,44 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-  global.groupCache = global.groupCache || {}
+// 🛠 Perbaikan pengambilan metadata & pengecekan admin bot
+global.groupCache = global.groupCache || {}
 
-// Ambil metadata dari cache jika masih valid
 let metadata = global.groupCache[from]
+
 if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
     metadata = await sock.groupMetadata(from)
     metadata._cachedAt = Date.now()
     global.groupCache[from] = metadata
   } catch (err) {
-    return // gagalkan kalau metadata gagal
+    console.error('❌ Gagal ambil metadata:', err.message)
+    return // jangan spam
   }
 }
 
-const OWNER_BOT = ['6282333014459@s.whatsapp.net']
-
-// Pastikan botNumber sesuai format WA JID
-const botNumber = sock.user?.id.includes('@')
+const botNumber = sock.user.id.includes('@')
   ? sock.user.id
   : sock.user.id.split(':')[0] + '@s.whatsapp.net'
 
-// Cek status owner/admin
-const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id
+const participants = metadata.participants || []
+
+const OWNER_BOT = ['6282333014459@s.whatsapp.net']
+const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 const isGroupOwner = sender === groupOwner
 const isBotOwner = OWNER_BOT.includes(sender)
 const isOwner = isBotOwner || isGroupOwner
 
-// Cek apakah pengirim admin
-const senderRole = metadata.participants.find(p => p.id === sender)?.admin
+const senderRole = participants.find(p => p.id === sender)?.admin
 const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
-// Cek apakah bot adalah admin
-const botRole = metadata.participants.find(p => p.id === botNumber)?.admin
+const botRole = participants.find(p => p.id === botNumber)?.admin
 const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
+
+console.log('📛 BOT:', botNumber)
+console.log('🔍 BOT ROLE:', botRole)
+console.log('✅ isBotAdmin:', isBotAdmin)
+
 
 // Deteksi polling & baca DB
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage')
