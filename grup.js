@@ -99,7 +99,8 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 }
 
 // ✅ Perbaikan format botNumber agar cocok dengan ID di participants
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+const botNumber = sock.user.id?.split(':')[0] + '@s.whatsapp.net';
+const realBotId = sock.user.id;
 
 // ✅ Dapatkan peserta grup
 const participants = metadata.participants || []
@@ -118,8 +119,10 @@ const senderRole = participants.find(p => p.id === sender)?.admin
 const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
 // 🤖 Cek apakah bot adalah admin
-const botRole = participants.find(p => p.id === botNumber)?.admin
-const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
+const botParticipant = participants.find(p => 
+  p.id === botNumber || p.id === realBotId
+);
+const isBotAdmin = ['admin', 'superadmin'].includes(botParticipant?.admin);
 
 // 🔍 Debug log
 console.log('📛 BOT:', botNumber)
