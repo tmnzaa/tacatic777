@@ -98,28 +98,33 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   }
 }
 
-const botNumber = sock.user.id.includes('@')
-  ? sock.user.id
-  : sock.user.id.split(':')[0] + '@s.whatsapp.net'
+// ✅ Perbaikan format botNumber agar cocok dengan ID di participants
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
 
+// ✅ Dapatkan peserta grup
 const participants = metadata.participants || []
 
+// 🔐 Daftar owner bot
 const OWNER_BOT = ['6282333014459@s.whatsapp.net']
+
+// 🧠 Cek owner grup dan status pemilik
 const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 const isGroupOwner = sender === groupOwner
 const isBotOwner = OWNER_BOT.includes(sender)
 const isOwner = isBotOwner || isGroupOwner
 
+// 🧑‍💼 Cek apakah pengirim admin
 const senderRole = participants.find(p => p.id === sender)?.admin
 const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
+// 🤖 Cek apakah bot adalah admin
 const botRole = participants.find(p => p.id === botNumber)?.admin
 const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
 
+// 🔍 Debug log
 console.log('📛 BOT:', botNumber)
 console.log('🔍 BOT ROLE:', botRole)
 console.log('✅ isBotAdmin:', isBotAdmin)
-
 
 // Deteksi polling & baca DB
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage')
