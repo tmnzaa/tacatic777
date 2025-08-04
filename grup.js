@@ -102,10 +102,10 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
 const botIdRaw = sock?.user?.id || ''
 const botJid = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw
 
-// 🧑‍🤝‍🧑 Peserta
+// 🧑‍🤝‍🧑 Peserta grup
 const participants = metadata.participants || []
 
-// 🔍 Data peserta bot
+// 🔍 Cek apakah bot admin
 const botParticipant = participants.find(p => p.id === botJid)
 const botRole = botParticipant?.admin || null
 const isBotAdmin = botRole !== null
@@ -113,21 +113,23 @@ const isBotAdmin = botRole !== null
 // 🔐 Daftar owner bot
 const OWNER_BOT = ['6282333014459@s.whatsapp.net']
 
-// 📌 Owner grup
+// 📌 Cek owner grup
 const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 const isGroupOwner = sender === groupOwner
 const isBotOwner = OWNER_BOT.includes(sender)
 const isOwner = isBotOwner || isGroupOwner
 
-// 🧑‍💼 Cek admin pengirim
+// 🧑‍💼 Cek apakah pengirim adalah admin
 const senderRole = participants.find(p => p.id === sender)?.admin
 const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
-// 🔍 Debug log
+// 🐞 Debug log
 console.log('📛 BOT:', botJid)
 console.log('👥 BOT PARTICIPANT:', botParticipant)
 console.log('🔍 BOT ROLE:', botRole)
 console.log('✅ isBotAdmin:', isBotAdmin)
+console.log('🧑‍💼 isAdmin:', isAdmin)
+console.log('👑 isOwner:', isOwner)
 
 
 // Deteksi polling & baca DB
