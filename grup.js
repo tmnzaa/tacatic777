@@ -82,24 +82,23 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-  global.groupCache = global.groupCache || {}
+ global.groupCache = global.groupCache || {}
 
+let metadata = global.groupCache[from];
 if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
-    metadata = await sock.groupMetadata(from)
-    metadata._cachedAt = Date.now()
-    global.groupCache[from] = metadata
+    metadata = await sock.groupMetadata(from);
+    metadata._cachedAt = Date.now();
+    global.groupCache[from] = metadata;
   } catch (err) {
-    return // jangan spam console
+    console.error('❌ Gagal ambil metadata grup:', err);
+    return;
   }
 }
 
  const OWNER_BOT = [
   '6282333014459@s.whatsapp.net',
 ];
-
-// Ambil metadata grup (wajib await)
-const metadata = await sock.groupMetadata(from);
 
 // Pastikan botNumber sesuai format WA JID
 const botNumber = sock.user?.id.includes('@')
