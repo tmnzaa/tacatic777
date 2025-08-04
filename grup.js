@@ -82,71 +82,62 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-// ✅ Inisialisasi cache metadata
 global.groupCache = global.groupCache || {}
 
-let metadata
-
-try {
-  // ✅ Pakai cache kalau masih valid (5 menit)
-  const cached = global.groupCache[from]
-  if (cached && Date.now() - cached._cachedAt < 300000) {
-    metadata = cached
-  } else {
-    // ✅ Ambil ulang metadata jika cache kadaluarsa
-    metadata = await sock.groupMetadata(from)
+async function getGroupMetadata(from) {
+  try {
+    const metadata = await sock.groupMetadata(from)
     metadata._cachedAt = Date.now()
     global.groupCache[from] = metadata
-  }
-} catch (err) {
-  console.error('❌ Gagal ambil metadata grup:', err.message)
-  return
-}
-
-// ✅ Format botNumber agar selalu valid
-const botNumber = (sock?.user?.id || '').split(':')[0] + '@s.whatsapp.net'
-
-// ✅ Ambil daftar peserta grup
-const participants = metadata?.participants || []
-
-// ✅ Cek role bot
-let botRole = participants.find(p => p.id === botNumber)?.admin
-
-// 🔁 Jika botRole masih undefined (biasanya karena bot baru join), coba ambil ulang metadata
-if (!botRole) {
-  try {
-    const freshMeta = await sock.groupMetadata(from)
-    const freshParticipants = freshMeta.participants || []
-    botRole = freshParticipants.find(p => p.id === botNumber)?.admin
-    // Update cache biar konsisten
-    freshMeta._cachedAt = Date.now()
-    global.groupCache[from] = freshMeta
-  } catch (e) {
-    console.error('❌ Gagal ambil metadata ulang:', e.message)
+    return metadata
+  } catch (err) {
+    console.error('❌ Gagal ambil metadata:', err.message)
+    return null
   }
 }
 
-// 🔒 List pemilik bot
+let metadata = global.groupCache[from]
+
+// 🔄 Ambil ulang metadata jika:
+// - belum ada cache
+// - cache sudah lebih dari 5 menit
+// - atau bot tidak terdeteksi admin (agar selalu akurat untuk grup baru)
+if (
+  !metadata || 
+  Date.now() - metadata._cachedAt > 300000 ||
+  !metadata.participants.find(p => p.id === (sock.user.id.split(':')[0] + '@s.whatsapp.net'))
+) {
+  metadata = await getGroupMetadata(from)
+  if (!metadata) return
+}
+
+// ✅ Format bot number
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+
+// ✅ Peserta grup
+const participants = metadata.participants || []
+
+// 🔐 Daftar owner bot
 const OWNER_BOT = ['6282333014459@s.whatsapp.net']
 
-// 🔍 Cek owner grup
+// 🧠 Cek owner grup dan status pemilik
 const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 const isGroupOwner = sender === groupOwner
 const isBotOwner = OWNER_BOT.includes(sender)
-const isOwner = isGroupOwner || isBotOwner
+const isOwner = isBotOwner || isGroupOwner
 
-// 🔍 Cek apakah pengirim admin
+// 🧑‍💼 Cek apakah pengirim admin
 const senderRole = participants.find(p => p.id === sender)?.admin
 const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
-// ✅ Cek apakah bot admin
+// 🤖 Cek apakah bot adalah admin
+const botRole = participants.find(p => p.id === botNumber)?.admin
 const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
 
-// 🧪 Debug log
+// 🔍 Debug log
 console.log('📛 BOT:', botNumber)
 console.log('🔍 BOT ROLE:', botRole)
 console.log('✅ isBotAdmin:', isBotAdmin)
-
 
 // Deteksi polling & baca DB
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage')
