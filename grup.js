@@ -82,60 +82,52 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-// 🛠 Inisialisasi cache metadata grup
+// 🛠 Perbaikan pengambilan metadata & pengecekan admin bot
 global.groupCache = global.groupCache || {}
 
-let metadata
+let metadata = global.groupCache[from]
 
-// Ambil metadata dari cache atau fetch baru jika sudah lebih dari 5 menit
-if (global.groupCache[from] && Date.now() - global.groupCache[from]._cachedAt <= 300000) {
-  metadata = global.groupCache[from]
-} else {
+if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
     metadata = await sock.groupMetadata(from)
     metadata._cachedAt = Date.now()
     global.groupCache[from] = metadata
   } catch (err) {
-    console.error('❌ Gagal mengambil metadata grup:', err.message)
-    return sock.sendMessage(from, {
-      text: '❌ Gagal mengambil data grup. Coba lagi nanti.'
-    }, { quoted: msg })
+    console.error('❌ Gagal ambil metadata:', err.message)
+    return // jangan spam
   }
 }
 
-// ✅ Ambil peserta dan pemilik grup
+// ✅ Dapatkan peserta grup
 const participants = metadata.participants || []
-const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 
-// ✅ Format ID bot agar cocok dengan participant ID
+// ✅ Format ID bot agar cocok dengan participants
 const botIdRaw = sock?.user?.id || ''
-const botNumber = botIdRaw.includes(':') ? botIdRaw.split(':')[0] + '@s.whatsapp.net' : botIdRaw
+const botNumber = botIdRaw.includes(':')
+  ? botIdRaw.split(':')[0] + '@s.whatsapp.net'
+  : botIdRaw
 
 // 🔐 Daftar owner bot
 const OWNER_BOT = ['6282333014459@s.whatsapp.net']
 
-// 🧠 Cek status
+// 🧠 Cek owner grup dan status pemilik
+const groupOwner = metadata.owner || participants.find(p => p.admin === 'superadmin')?.id
 const isGroupOwner = sender === groupOwner
 const isBotOwner = OWNER_BOT.includes(sender)
 const isOwner = isBotOwner || isGroupOwner
 
-// 🧑‍💼 Cek apakah pengirim adalah admin grup
-const senderData = participants.find(p => p.id === sender)
-const senderRole = senderData?.admin || null
-const isAdmin = senderRole === 'admin' || senderRole === 'superadmin'
+// 🧑‍💼 Cek apakah pengirim admin
+const senderRole = participants.find(p => p.id === sender)?.admin
+const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
-// 🤖 Cek apakah bot adalah admin grup
-const botData = participants.find(p => p.id === botNumber)
-const botRole = botData?.admin || null
-const isBotAdmin = botRole === 'admin' || botRole === 'superadmin'
+// 🤖 Cek apakah bot adalah admin
+const botRole = participants.find(p => p.id === botNumber)?.admin
+const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
 
-// 🪵 Debug Log
-console.log('📛 BOT:', botNumber)
-console.log('👥 PARTICIPANTS COUNT:', participants.length)
-console.log('🤖 BOT ROLE:', botRole)
+// 🔍 Debug log
+console.log('📛 BOT ID:', botNumber)
+console.log('🔍 BOT ROLE:', botRole)
 console.log('✅ isBotAdmin:', isBotAdmin)
-console.log('🧑 isAdmin (sender):', isAdmin)
-console.log('👑 isOwner (sender):', isOwner)
 
 
 // Deteksi polling & baca DB
