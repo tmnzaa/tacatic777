@@ -82,119 +82,118 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
- global.groupCache = global.groupCache || {}
+  global.groupCache = global.groupCache || {}
 
-let metadata = global.groupCache[from];
+// Ambil metadata dari cache jika masih valid
+let metadata = global.groupCache[from]
 if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
-    metadata = await sock.groupMetadata(from);
-    metadata._cachedAt = Date.now();
-    global.groupCache[from] = metadata;
+    metadata = await sock.groupMetadata(from)
+    metadata._cachedAt = Date.now()
+    global.groupCache[from] = metadata
   } catch (err) {
-    console.error('❌ Gagal ambil metadata grup:', err);
-    return;
+    return // gagalkan kalau metadata gagal
   }
 }
 
- const OWNER_BOT = [
-  '6282333014459@s.whatsapp.net',
-];
+const OWNER_BOT = ['6282333014459@s.whatsapp.net']
 
 // Pastikan botNumber sesuai format WA JID
 const botNumber = sock.user?.id.includes('@')
   ? sock.user.id
-  : sock.user.id.split(':')[0] + '@s.whatsapp.net';
+  : sock.user.id.split(':')[0] + '@s.whatsapp.net'
 
-// Cek apakah pengirim adalah owner grup / bot
-const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
-const isGroupOwner = sender === groupOwner;
-const isBotOwner = OWNER_BOT.includes(sender);
-const isOwner = isBotOwner || isGroupOwner;
+// Cek status owner/admin
+const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id
+const isGroupOwner = sender === groupOwner
+const isBotOwner = OWNER_BOT.includes(sender)
+const isOwner = isBotOwner || isGroupOwner
 
 // Cek apakah pengirim admin
-const senderRole = metadata.participants.find(p => p.id === sender)?.admin;
-const isAdmin = ['admin', 'superadmin'].includes(senderRole);
+const senderRole = metadata.participants.find(p => p.id === sender)?.admin
+const isAdmin = ['admin', 'superadmin'].includes(senderRole)
 
 // Cek apakah bot adalah admin
-const botRole = metadata.participants.find(p => p.id === botNumber)?.admin;
-const isBotAdmin = ['admin', 'superadmin'].includes(botRole);
+const botRole = metadata.participants.find(p => p.id === botNumber)?.admin
+const isBotAdmin = ['admin', 'superadmin'].includes(botRole)
 
-// Cek polling, data grup, cache DB
-const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
-const db = global.dbCache || fs.readJsonSync(dbFile);
-global.dbCache = db;
-db[from] = db[from] || {};
-db[from].nama = metadata.subject;
-const fitur = db[from];
-db[from].dnd = db[from].dnd || false;
-fs.writeJsonSync(dbFile, db, { spaces: 2 });
+// Deteksi polling & baca DB
+const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage')
+const db = global.dbCache || fs.readJsonSync(dbFile)
+global.dbCache = db
 
-const now = new Date();
-const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
+db[from] = db[from] || {}
+db[from].nama = metadata.subject
+const fitur = db[from]
+db[from].dnd = db[from].dnd || false
+fs.writeJsonSync(dbFile, db, { spaces: 2 })
+
+const now = new Date()
+const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
 
 // Anti polling
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
-  await sock.sendMessage(from, { delete: msg.key });
+  await sock.sendMessage(from, { delete: msg.key })
 
-  const strikeDB = global.strikeCache;
-  strikeDB[from] = strikeDB[from] || {};
-  strikeDB[from][sender] = strikeDB[from][sender] || 0;
-  strikeDB[from][sender] += 1;
+  const strikeDB = global.strikeCache || {}
+  strikeDB[from] = strikeDB[from] || {}
+  strikeDB[from][sender] = strikeDB[from][sender] || 0
+  strikeDB[from][sender] += 1
 
   if (strikeDB[from][sender] >= 20) {
-    await sock.groupParticipantsUpdate(from, [sender], 'remove');
-    delete strikeDB[from][sender];
+    await sock.groupParticipantsUpdate(from, [sender], 'remove')
+    delete strikeDB[from][sender]
   }
 
-  await fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
-  global.strikeCache = strikeDB;
-  return;
+  await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
+  global.strikeCache = strikeDB
+  return
 }
 
-// Cegah jika hanya disapa (mention) tanpa command
-if (mentions.includes(botNumber) && !isCommand) return;
+// Cegah jika hanya mention bot tanpa command
+if (mentions.includes(botNumber) && !isCommand) return
 
-// Fitur aktivasi bot
+// Aktivasi bot
 if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
       text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
-    }, { quoted: msg });
+    }, { quoted: msg })
   }
 
   if (!isOwner) {
     return sock.sendMessage(from, {
       text: '⚠️ Hanya *Owner Bot* yang bisa mengaktifkan bot ini!'
-    }, { quoted: msg });
+    }, { quoted: msg })
   }
 
-  const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
+  const expiredDate = fitur.expired ? new Date(fitur.expired) : null
 
   if (fitur.permanen || (expiredDate && expiredDate >= now)) {
     return sock.sendMessage(from, {
       text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-    });
+    })
   }
 
-  if (text === '.aktifbot3k') fitur.expired = tambahHari(7);
-  if (text === '.aktifbot5k') fitur.expired = tambahHari(30);
-  if (text === '.aktifbot7k') fitur.expired = tambahHari(60);
+  if (text === '.aktifbot3k') fitur.expired = tambahHari(7)
+  if (text === '.aktifbot5k') fitur.expired = tambahHari(30)
+  if (text === '.aktifbot7k') fitur.expired = tambahHari(60)
 
   if (text === '.aktifbotper') {
     if (!isOwner) {
       return sock.sendMessage(from, {
         text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
-      }, { quoted: msg });
+      }, { quoted: msg })
     }
-    fitur.permanen = true;
-    fitur.expired = null;
+    fitur.permanen = true
+    fitur.expired = null
   }
 
-  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+  fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
   return sock.sendMessage(from, {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-  }, { quoted: msg });
+  }, { quoted: msg })
 }
 
 const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2', '.hdv2',];
